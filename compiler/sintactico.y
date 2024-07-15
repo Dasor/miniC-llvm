@@ -68,12 +68,11 @@ identifier_list: identifier { $$ = $1;}
 	      | identifier_list COMMA identifier {$$ = creaCodigo(2,$1,$3);}  ;
 
 
-identifier: ID {AÑADIR_ID($1,tipo); if(!error){$$ = creaLineaCodigo("alloca",getRegister(),NULL,NULL);}}
+identifier: ID {AÑADIR_ID($1,tipo); if(!error){$$ = creaLC();}}
 	  | ID ASSIGNOP expression {
 	  				AÑADIR_ID($1,tipo);
 					if(!error){
-						char *regRes = recuperaResLC($3);
-						ListaC aux1 = creaLineaCodigo("store3",getRegister(),regRes,NULL);
+						ListaC aux1 = allocStoreId(recuperaResLC($3),obtenerId($1));
 						$$ = creaCodigo(2,$3,aux1);
 					}
 	  			   };
@@ -161,10 +160,10 @@ expression: expression PLUSOP expression { if(!error){$$ = aritExpr("add",$1,$3)
 	  | ID {
 			if(!error){
 				if(!pertenece($1,l)){PRINT_ERROR("Error semántico en la linea %d variable %s no declarada\n",yylineno,$1); error = true ;semErrors++;}
-				$$ = creaLineaCodigo("store1",getRegister(),$1,NULL);
+				$$ = allocStore(obtenerId($1));
 			}
 		}
-	  | NUM  {  if(!error){ $$ = creaLineaCodigo("store2",getRegister(),$1,NULL); } }
+	  | NUM  {  if(!error){ $$ = allocStore($1);} }
 
 
 %%

@@ -9,51 +9,62 @@
 
 define dso_local i32 @main() #0{
 
-	store2 i32 0, ptr %1, align 4
-	store3 i32 %1, ptr %2, align 4
-	store2 i32 0, ptr %3, align 4
-	store3 i32 %3, ptr %4, align 4
-	store2 i32 5, ptr %5, align 4
-	store2 i32 2, ptr %6, align 4
-	%7 = add %5, %6
-	store2 i32 2, ptr %8, align 4
-	%9 = sub %7, %8
-	store3 i32 %9, ptr %10, align 4
-	%11 = call i32 (ptr, ...) @printf (ptr noundef @.str.0)
-	%37 = icmp eq i32 %12, %36
-	br i1 %37, label %38, label %39
-
-38:
-	%13 = call i32 (ptr, ...) @printf (ptr noundef @.str.1)
-	%14 = call i32 (ptr, ...) @printf (ptr noundef @.str.2)
-
-39:
-	%33 = icmp eq i32 %15, %32
-	br i1 %33, label %34, label %35
-
-34:
-	%16 = call i32 (ptr, ...) @printf (ptr noundef @.str.3)
+	%1 = alloca i32, align 4
+	store i32 0, ptr %1, align 4
+	%a = alloca i32, align 4
+	store ptr %1, ptr %a, align 4
+	%2 = alloca i32, align 4
+	store i32 0, ptr %2, align 4
+	%b = alloca i32, align 4
+	store ptr %2, ptr %b, align 4
+	%3 = alloca i32, align 4
+	store i32 5, ptr %3, align 4
+	%4 = alloca i32, align 4
+	store i32 2, ptr %4, align 4
+	%5 = add %3, %4
+	%6 = alloca i32, align 4
+	store i32 2, ptr %6, align 4
+	%7 = sub %5, %6
+	%c = alloca i32, align 4
+	store i32 %7, ptr %c, align 4
+	%8 = call i32 (ptr, ...) @printf (ptr noundef @.str.0)
+	%34 = icmp eq i32 %9, %33
+	br i1 %34, label %35, label %36
 
 35:
+	%10 = call i32 (ptr, ...) @printf (ptr noundef @.str.1)
+	%11 = call i32 (ptr, ...) @printf (ptr noundef @.str.2)
 
-29:
-	%28 = icmp eq i32 %17, %27
-	br i1 %28, label %30, label %31
-
-30:
-	%18 = call i32 (ptr, ...) @printf (ptr noundef @.str.4)
-	%20 = call i32 (ptr, ...) @printf (ptr noundef %19)
-	%21 = call i32 (ptr, ...) @printf (ptr noundef @.str.2)
-	store1 i32 c, ptr %22, align 4
-	store2 i32 2, ptr %23, align 4
-	%24 = sub %22, %23
-	store2 i32 1, ptr %25, align 4
-	%26 = add %24, %25
-	store4 i32 _c, ptr %26, align 4
-	br label %29
+36:
+	%30 = icmp eq i32 %12, %29
+	br i1 %30, label %31, label %32
 
 31:
-	%40 = call i32 (ptr, ...) @printf (ptr noundef @.str.6)
-	%41 = call i32 (ptr, ...) @printf (ptr noundef @.str.2)
+	%13 = call i32 (ptr, ...) @printf (ptr noundef @.str.3)
+
+32:
+
+26:
+	%25 = icmp eq i32 %14, %24
+	br i1 %25, label %27, label %28
+
+27:
+	%15 = call i32 (ptr, ...) @printf (ptr noundef @.str.4)
+	%17 = call i32 (ptr, ...) @printf (ptr noundef %16)
+	%18 = call i32 (ptr, ...) @printf (ptr noundef @.str.2)
+	%19 = alloca i32, align 4
+	store i32 %c, ptr %19, align 4
+	%20 = alloca i32, align 4
+	store i32 2, ptr %20, align 4
+	%21 = sub %19, %20
+	%22 = alloca i32, align 4
+	store i32 1, ptr %22, align 4
+	%23 = add %21, %22
+	store4 i32 %c, ptr %23, align 4
+	br label %26
+
+28:
+	%37 = call i32 (ptr, ...) @printf (ptr noundef @.str.6)
+	%38 = call i32 (ptr, ...) @printf (ptr noundef @.str.2)
 }
 declare i32 @printf(ptr noundef, ...) #1

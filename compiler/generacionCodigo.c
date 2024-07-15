@@ -78,7 +78,7 @@ void imprimeCodigo(ListaC codigo){
 		}else if(op.arg1 == NULL){ // salto incondicional
 			if(op.op[0] == 'a') // allocate
 				fprintf(fptr,"\t%s = %s i32, align 4\n",op.res,op.op);
-			if(op.op[0] == 'b') // branch
+			else if(op.op[0] == 'b') // branch
 				fprintf(fptr,"\t%s label %%%s\n",op.op,op.res);
 			else
 				fprintf(fptr,"\t%s %s\n",op.op,op.res);
@@ -140,7 +140,7 @@ char *creaEtiqueta(){
 // dado un nombre de variable la devuelve con el _
 char *obtenerId(char *var){
  	char id[BUFSIZE] = {0};
-	strcpy(id,"_");
+	strcpy(id,"%");
 	strcat(id,var);
 	return strdup(id);
 }
@@ -254,5 +254,17 @@ ListaC compare(char* inst, ListaC expr1, ListaC expr2){
 ListaC not(ListaC expr){
 	ListaC aux = creaLineaCodigo("store",getRegister(),"0",NULL);
 	return compare("eq",expr,aux);
+}
+
+ListaC allocStoreId(char *value, char *regRes){
+
+	ListaC linea1 = creaLineaCodigo("alloca",regRes,NULL,NULL);
+	ListaC linea2 = creaLineaCodigo("store",regRes,value,NULL);
+	return creaCodigo(2,linea1,linea2);
+
+}
+
+ListaC allocStore(char *value){
+	return allocStoreId(value,getRegister());
 }
 

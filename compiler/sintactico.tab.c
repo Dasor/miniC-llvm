@@ -567,12 +567,12 @@ static const yytype_int8 yytranslate[] =
 static const yytype_uint8 yyrline[] =
 {
        0,    59,    59,    59,    61,    61,    62,    63,    64,    64,
-      65,    67,    68,    71,    72,    82,    83,    86,    93,    94,
-      95,    96,    97,    98,   100,   101,   102,   103,   104,   105,
-     106,   107,   108,   109,   110,   111,   112,   114,   116,   117,
-     120,   123,   131,   135,   141,   142,   143,   144,   145,   146,
-     147,   148,   149,   150,   151,   152,   153,   154,   160,   161,
-     167
+      65,    67,    68,    71,    72,    81,    82,    85,    92,    93,
+      94,    95,    96,    97,    99,   100,   101,   102,   103,   104,
+     105,   106,   107,   108,   109,   110,   111,   113,   115,   116,
+     119,   122,   130,   134,   140,   141,   142,   143,   144,   145,
+     146,   147,   148,   149,   150,   151,   152,   153,   159,   160,
+     166
 };
 #endif
 
@@ -1313,7 +1313,7 @@ yyreduce:
 
   case 13: /* identifier: ID  */
 #line 71 "sintactico.y"
-               {AÑADIR_ID((yyvsp[0].string),tipo); if(!error){(yyval.codigo) = creaLineaCodigo("alloca",getRegister(),NULL,NULL);}}
+               {AÑADIR_ID((yyvsp[0].string),tipo); if(!error){(yyval.codigo) = creaLC();}}
 #line 1318 "sintactico.tab.c"
     break;
 
@@ -1322,28 +1322,27 @@ yyreduce:
                                    {
 	  				AÑADIR_ID((yyvsp[-2].string),tipo);
 					if(!error){
-						char *regRes = recuperaResLC((yyvsp[0].codigo));
-						ListaC aux1 = creaLineaCodigo("store3",getRegister(),regRes,NULL);
+						ListaC aux1 = allocStoreId(recuperaResLC((yyvsp[0].codigo)),obtenerId((yyvsp[-2].string)));
 						(yyval.codigo) = creaCodigo(2,(yyvsp[0].codigo),aux1);
 					}
 	  			   }
-#line 1331 "sintactico.tab.c"
+#line 1330 "sintactico.tab.c"
     break;
 
   case 15: /* statement_list: statement_list statement  */
-#line 82 "sintactico.y"
+#line 81 "sintactico.y"
                                          { if(!error){(yyval.codigo) = creaCodigo(2,(yyvsp[-1].codigo),(yyvsp[0].codigo));}}
-#line 1337 "sintactico.tab.c"
+#line 1336 "sintactico.tab.c"
     break;
 
   case 16: /* statement_list: %empty  */
-#line 83 "sintactico.y"
+#line 82 "sintactico.y"
                              {if(!error){(yyval.codigo) = creaLC();} }
-#line 1343 "sintactico.tab.c"
+#line 1342 "sintactico.tab.c"
     break;
 
   case 17: /* statement: ID ASSIGNOP expression SEMICOLON  */
-#line 86 "sintactico.y"
+#line 85 "sintactico.y"
                                             {
 	 					ASIG_VALIDA((yyvsp[-3].string));
 						if(!error){
@@ -1351,151 +1350,151 @@ yyreduce:
 							(yyval.codigo) = creaCodigo(2,(yyvsp[-1].codigo),creaLineaCodigo("store4",regRes,obtenerId((yyvsp[-3].string)),NULL));
 						}
 					    }
-#line 1355 "sintactico.tab.c"
+#line 1354 "sintactico.tab.c"
     break;
 
   case 18: /* statement: LCORCHETE statement_list RCORCHETE  */
-#line 93 "sintactico.y"
+#line 92 "sintactico.y"
                                               { if(!error){(yyval.codigo) = (yyvsp[-1].codigo); }}
-#line 1361 "sintactico.tab.c"
+#line 1360 "sintactico.tab.c"
     break;
 
   case 19: /* statement: IF LPAREN expression RPAREN statement  */
-#line 94 "sintactico.y"
+#line 93 "sintactico.y"
                                                                 {if(!error){(yyval.codigo) = imprimirIf((yyvsp[-2].codigo),(yyvsp[0].codigo));}}
-#line 1367 "sintactico.tab.c"
+#line 1366 "sintactico.tab.c"
     break;
 
   case 20: /* statement: IF LPAREN expression RPAREN statement ELSE statement  */
-#line 95 "sintactico.y"
+#line 94 "sintactico.y"
                                                                 {if(!error){(yyval.codigo) = imprimirIfElse((yyvsp[-4].codigo),(yyvsp[-2].codigo),(yyvsp[0].codigo));}}
-#line 1373 "sintactico.tab.c"
+#line 1372 "sintactico.tab.c"
     break;
 
   case 21: /* statement: WHILE LPAREN expression RPAREN statement  */
-#line 96 "sintactico.y"
+#line 95 "sintactico.y"
                                                     { if(!error){(yyval.codigo) = imprimirWhile((yyvsp[-2].codigo),(yyvsp[0].codigo));}}
-#line 1379 "sintactico.tab.c"
+#line 1378 "sintactico.tab.c"
     break;
 
   case 22: /* statement: DO statement WHILE LPAREN expression RPAREN  */
-#line 97 "sintactico.y"
+#line 96 "sintactico.y"
                                                        {if(!error){(yyval.codigo) = imprimirDoWhile((yyvsp[-4].codigo),(yyvsp[-1].codigo));}}
-#line 1385 "sintactico.tab.c"
+#line 1384 "sintactico.tab.c"
     break;
 
   case 23: /* statement: PRINT LPAREN print_list RPAREN SEMICOLON  */
-#line 98 "sintactico.y"
+#line 97 "sintactico.y"
                                                     { if(!error){(yyval.codigo) = (yyvsp[-2].codigo); }}
-#line 1391 "sintactico.tab.c"
+#line 1390 "sintactico.tab.c"
     break;
 
   case 24: /* statement: ID ASSIGNOP error  */
-#line 100 "sintactico.y"
+#line 99 "sintactico.y"
                              {CLEAN_ERROR;PRINT_ERROR("se esperaba ;\n");}
-#line 1397 "sintactico.tab.c"
+#line 1396 "sintactico.tab.c"
     break;
 
   case 25: /* statement: PRINT error SEMICOLON  */
-#line 101 "sintactico.y"
+#line 100 "sintactico.y"
                                  {CLEAN_ERROR;PRINT_ERROR("sentencia print mal formada\n");}
-#line 1403 "sintactico.tab.c"
+#line 1402 "sintactico.tab.c"
     break;
 
   case 26: /* statement: PRINT LPAREN print_list RPAREN error  */
-#line 102 "sintactico.y"
+#line 101 "sintactico.y"
                                                 {CLEAN_ERROR;PRINT_ERROR("se esperaba ;\n");}
-#line 1409 "sintactico.tab.c"
+#line 1408 "sintactico.tab.c"
     break;
 
   case 27: /* statement: PRINT LPAREN error RPAREN SEMICOLON  */
-#line 103 "sintactico.y"
+#line 102 "sintactico.y"
                                                {CLEAN_ERROR;PRINT_ERROR("argumentos de print inválidos\n");}
-#line 1415 "sintactico.tab.c"
+#line 1414 "sintactico.tab.c"
     break;
 
   case 28: /* statement: READ error SEMICOLON  */
-#line 104 "sintactico.y"
+#line 103 "sintactico.y"
                                 {CLEAN_ERROR;PRINT_ERROR("sentencia read mal formada\n");}
-#line 1421 "sintactico.tab.c"
+#line 1420 "sintactico.tab.c"
     break;
 
   case 29: /* statement: READ LPAREN read_list RPAREN error  */
-#line 105 "sintactico.y"
+#line 104 "sintactico.y"
                                               {CLEAN_ERROR;PRINT_ERROR("se esperaba ;\n");}
-#line 1427 "sintactico.tab.c"
+#line 1426 "sintactico.tab.c"
     break;
 
   case 30: /* statement: READ LPAREN error RPAREN SEMICOLON  */
-#line 106 "sintactico.y"
+#line 105 "sintactico.y"
                                               {CLEAN_ERROR;PRINT_ERROR("argumentos de read inválidos\n");}
-#line 1433 "sintactico.tab.c"
+#line 1432 "sintactico.tab.c"
     break;
 
   case 31: /* statement: WHILE LPAREN error RPAREN  */
-#line 107 "sintactico.y"
+#line 106 "sintactico.y"
                                      {CLEAN_ERROR;PRINT_ERROR("expresión inválida en bucle while\n");}
-#line 1439 "sintactico.tab.c"
+#line 1438 "sintactico.tab.c"
     break;
 
   case 32: /* statement: WHILE error SEMICOLON  */
-#line 108 "sintactico.y"
+#line 107 "sintactico.y"
                                  {CLEAN_ERROR;PRINT_ERROR("sentencia while mal formada\n");}
-#line 1445 "sintactico.tab.c"
+#line 1444 "sintactico.tab.c"
     break;
 
   case 33: /* statement: DO statement WHILE LPAREN error RPAREN  */
-#line 109 "sintactico.y"
+#line 108 "sintactico.y"
                                                   {CLEAN_ERROR;PRINT_ERROR("expresión inválida en bucle do-while\n");}
-#line 1451 "sintactico.tab.c"
+#line 1450 "sintactico.tab.c"
     break;
 
   case 34: /* statement: IF LPAREN error RPAREN  */
-#line 110 "sintactico.y"
+#line 109 "sintactico.y"
                                   {CLEAN_ERROR;PRINT_ERROR("expresión inválida en sentencia if\n");}
-#line 1457 "sintactico.tab.c"
+#line 1456 "sintactico.tab.c"
     break;
 
   case 35: /* statement: IF error SEMICOLON  */
-#line 111 "sintactico.y"
+#line 110 "sintactico.y"
                                {CLEAN_ERROR;PRINT_ERROR("sentencia if mal formada\n");}
-#line 1463 "sintactico.tab.c"
+#line 1462 "sintactico.tab.c"
     break;
 
   case 36: /* statement: error SEMICOLON  */
-#line 112 "sintactico.y"
+#line 111 "sintactico.y"
                            {CLEAN_ERROR;PRINT_ERROR("se esperaba ;\n");}
-#line 1469 "sintactico.tab.c"
+#line 1468 "sintactico.tab.c"
     break;
 
   case 37: /* statement: READ LPAREN read_list RPAREN SEMICOLON  */
-#line 114 "sintactico.y"
+#line 113 "sintactico.y"
                                                   { if(!error){(yyval.codigo) = (yyvsp[-2].codigo); }}
-#line 1475 "sintactico.tab.c"
+#line 1474 "sintactico.tab.c"
     break;
 
   case 38: /* print_list: print_item  */
-#line 116 "sintactico.y"
+#line 115 "sintactico.y"
                        { if(!error){(yyval.codigo) = (yyvsp[0].codigo); }}
-#line 1481 "sintactico.tab.c"
+#line 1480 "sintactico.tab.c"
     break;
 
   case 39: /* print_list: print_list COMMA print_item  */
-#line 117 "sintactico.y"
+#line 116 "sintactico.y"
                                         { if(!error){(yyval.codigo) = creaCodigo(2,(yyvsp[-2].codigo),(yyvsp[0].codigo));} }
-#line 1487 "sintactico.tab.c"
+#line 1486 "sintactico.tab.c"
     break;
 
   case 40: /* print_item: expression  */
-#line 120 "sintactico.y"
+#line 119 "sintactico.y"
                        {
 	  		 if(!error){(yyval.codigo) = imprimirExpresion((yyvsp[0].codigo));}
 		       }
-#line 1495 "sintactico.tab.c"
+#line 1494 "sintactico.tab.c"
     break;
 
   case 41: /* print_item: STRING  */
-#line 123 "sintactico.y"
+#line 122 "sintactico.y"
                    {
 	  		añadeEntrada((yyvsp[0].string),CADENA,l,contCadenas);
 			if(!error){
@@ -1503,141 +1502,141 @@ yyreduce:
 				(yyval.codigo) = imprimirCadena((yyvsp[0].string),l);
 			}
 		   }
-#line 1507 "sintactico.tab.c"
+#line 1506 "sintactico.tab.c"
     break;
 
   case 42: /* read_list: ID  */
-#line 131 "sintactico.y"
+#line 130 "sintactico.y"
               {
 	 	ASIG_VALIDA((yyvsp[0].string));
 		if(!error){(yyval.codigo) = leerId((yyvsp[0].string));}
 	      }
-#line 1516 "sintactico.tab.c"
+#line 1515 "sintactico.tab.c"
     break;
 
   case 43: /* read_list: read_list COMMA ID  */
-#line 135 "sintactico.y"
+#line 134 "sintactico.y"
                               {
 				ASIG_VALIDA((yyvsp[0].string));
 	 			if(!error){(yyval.codigo) = creaCodigo(2,(yyvsp[-2].codigo),leerId((yyvsp[0].string)));}
 			      }
-#line 1525 "sintactico.tab.c"
+#line 1524 "sintactico.tab.c"
     break;
 
   case 44: /* expression: expression PLUSOP expression  */
-#line 141 "sintactico.y"
+#line 140 "sintactico.y"
                                          { if(!error){(yyval.codigo) = aritExpr("add",(yyvsp[-2].codigo),(yyvsp[0].codigo));}}
-#line 1531 "sintactico.tab.c"
+#line 1530 "sintactico.tab.c"
     break;
 
   case 45: /* expression: expression MINUSOP expression  */
-#line 142 "sintactico.y"
+#line 141 "sintactico.y"
                                           { if(!error){(yyval.codigo) = aritExpr("sub",(yyvsp[-2].codigo),(yyvsp[0].codigo));}}
-#line 1537 "sintactico.tab.c"
+#line 1536 "sintactico.tab.c"
     break;
 
   case 46: /* expression: expression MULTOP expression  */
-#line 143 "sintactico.y"
+#line 142 "sintactico.y"
                                          { if(!error){(yyval.codigo) = aritExpr("mul",(yyvsp[-2].codigo),(yyvsp[0].codigo));}}
-#line 1543 "sintactico.tab.c"
+#line 1542 "sintactico.tab.c"
     break;
 
   case 47: /* expression: expression DIVOP expression  */
-#line 144 "sintactico.y"
+#line 143 "sintactico.y"
                                         { if(!error){(yyval.codigo) = aritExpr("udiv",(yyvsp[-2].codigo),(yyvsp[0].codigo));}}
-#line 1549 "sintactico.tab.c"
+#line 1548 "sintactico.tab.c"
     break;
 
   case 48: /* expression: expression LTOP expression  */
-#line 145 "sintactico.y"
+#line 144 "sintactico.y"
                                        { if(!error){(yyval.codigo) = compare("slt",(yyvsp[-2].codigo),(yyvsp[0].codigo));}}
-#line 1555 "sintactico.tab.c"
+#line 1554 "sintactico.tab.c"
     break;
 
   case 49: /* expression: expression GTOP expression  */
-#line 146 "sintactico.y"
+#line 145 "sintactico.y"
                                        { if(!error){(yyval.codigo) = compare("sgt",(yyvsp[0].codigo),(yyvsp[-2].codigo));}}
-#line 1561 "sintactico.tab.c"
+#line 1560 "sintactico.tab.c"
     break;
 
   case 50: /* expression: expression GTEOP expression  */
-#line 147 "sintactico.y"
+#line 146 "sintactico.y"
                                         { if(!error){(yyval.codigo) = compare("sge",(yyvsp[-2].codigo),(yyvsp[0].codigo));}}
-#line 1567 "sintactico.tab.c"
+#line 1566 "sintactico.tab.c"
     break;
 
   case 51: /* expression: expression LTEOP expression  */
-#line 148 "sintactico.y"
+#line 147 "sintactico.y"
                                         { if(!error){(yyval.codigo) = compare("sle",(yyvsp[-2].codigo),(yyvsp[0].codigo));}}
-#line 1573 "sintactico.tab.c"
+#line 1572 "sintactico.tab.c"
     break;
 
   case 52: /* expression: expression EQOP expression  */
-#line 149 "sintactico.y"
+#line 148 "sintactico.y"
                                        { if(!error){(yyval.codigo) = compare("eq",(yyvsp[-2].codigo),(yyvsp[0].codigo));}}
-#line 1579 "sintactico.tab.c"
+#line 1578 "sintactico.tab.c"
     break;
 
   case 53: /* expression: expression NOTEQOP expression  */
-#line 150 "sintactico.y"
+#line 149 "sintactico.y"
                                           { if(!error){(yyval.codigo) = compare("ne",(yyvsp[-2].codigo),(yyvsp[0].codigo));}}
-#line 1585 "sintactico.tab.c"
+#line 1584 "sintactico.tab.c"
     break;
 
   case 54: /* expression: expression AND expression  */
-#line 151 "sintactico.y"
+#line 150 "sintactico.y"
                                       { if(!error){(yyval.codigo) = aritExpr("and",(yyvsp[-2].codigo),(yyvsp[0].codigo));}}
-#line 1591 "sintactico.tab.c"
+#line 1590 "sintactico.tab.c"
     break;
 
   case 55: /* expression: expression OR expression  */
-#line 152 "sintactico.y"
+#line 151 "sintactico.y"
                                      { if(!error){(yyval.codigo) = aritExpr("or",(yyvsp[-2].codigo),(yyvsp[0].codigo));}}
-#line 1597 "sintactico.tab.c"
+#line 1596 "sintactico.tab.c"
     break;
 
   case 56: /* expression: UNOT expression  */
-#line 153 "sintactico.y"
+#line 152 "sintactico.y"
                             { if(!error){(yyval.codigo) = not((yyvsp[0].codigo));}}
-#line 1603 "sintactico.tab.c"
+#line 1602 "sintactico.tab.c"
     break;
 
   case 57: /* expression: MINUSOP expression  */
-#line 154 "sintactico.y"
+#line 153 "sintactico.y"
                                             {
 						if(!error){
 							char *regRes = recuperaResLC((yyvsp[0].codigo));
 							(yyval.codigo) = creaCodigo(2,(yyvsp[0].codigo),creaLineaCodigo("neg",getRegister(),regRes,NULL));
 						}
 					    }
-#line 1614 "sintactico.tab.c"
+#line 1613 "sintactico.tab.c"
     break;
 
   case 58: /* expression: LPAREN expression RPAREN  */
-#line 160 "sintactico.y"
+#line 159 "sintactico.y"
                                      { (yyval.codigo) = (yyvsp[-1].codigo); }
-#line 1620 "sintactico.tab.c"
+#line 1619 "sintactico.tab.c"
     break;
 
   case 59: /* expression: ID  */
-#line 161 "sintactico.y"
+#line 160 "sintactico.y"
                {
 			if(!error){
 				if(!pertenece((yyvsp[0].string),l)){PRINT_ERROR("Error semántico en la linea %d variable %s no declarada\n",yylineno,(yyvsp[0].string)); error = true ;semErrors++;}
-				(yyval.codigo) = creaLineaCodigo("store1",getRegister(),(yyvsp[0].string),NULL);
+				(yyval.codigo) = allocStore(obtenerId((yyvsp[0].string)));
 			}
 		}
-#line 1631 "sintactico.tab.c"
+#line 1630 "sintactico.tab.c"
     break;
 
   case 60: /* expression: NUM  */
-#line 167 "sintactico.y"
-                 {  if(!error){ (yyval.codigo) = creaLineaCodigo("store2",getRegister(),(yyvsp[0].string),NULL); } }
-#line 1637 "sintactico.tab.c"
+#line 166 "sintactico.y"
+                 {  if(!error){ (yyval.codigo) = allocStore((yyvsp[0].string));} }
+#line 1636 "sintactico.tab.c"
     break;
 
 
-#line 1641 "sintactico.tab.c"
+#line 1640 "sintactico.tab.c"
 
       default: break;
     }
@@ -1830,7 +1829,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 170 "sintactico.y"
+#line 169 "sintactico.y"
 
 
 

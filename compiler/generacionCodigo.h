@@ -25,6 +25,8 @@ ListaC not(ListaC expr);
 ListaC equals(ListaC expr1, ListaC expr2);
 ListaC notEquals(ListaC expr1, ListaC expr2);
 ListaC compare(char* inst, ListaC expr1, ListaC expr2);
+ListaC allocStoreId(char *value, char *regRes);
+ListaC allocStore(char *value);
 
 
 #endif
