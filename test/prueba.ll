@@ -8,6 +8,7 @@ target triple = "x86_64-pc-linux-gnu"
 @.str.2 = private unnamed_addr constant [10 x i8] c"No a y b\0A\00", align 1
 @.str.3 = private unnamed_addr constant [8 x i8] c"c = %d\0A\00", align 1
 @.str.4 = private unnamed_addr constant [7 x i8] c"Final\0A\00", align 1
+@.str.5 = private unnamed_addr constant [2 x i8] c"%d", align 1
 
 ; Function Attrs: noinline nounwind optnone sspstrong uwtable
 define dso_local i32 @main() #0 {
@@ -23,7 +24,7 @@ define dso_local i32 @main() #0 {
   %6 = load i32, ptr %2, align 4
   %7 = icmp slt i32 %6, 88
   br i1 %7, label %8, label %10
-
+; hola
 8:                                                ; preds = %0
   %9 = call i32 (ptr, ...) @printf(ptr noundef @.str.1)
   br label %27
@@ -62,8 +63,8 @@ define dso_local i32 @main() #0 {
 
 27:                                               ; preds = %26, %8
   %28 = call i32 (ptr, ...) @printf(ptr noundef @.str.4)
-  %29 = load i32, ptr %1, align 4
-  ret i32 %29
+  %31 = load i32, ptr %1, align 4
+  ret i32 %31
 }
 
 declare i32 @printf(ptr noundef, ...) #1

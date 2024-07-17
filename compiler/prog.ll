@@ -1,70 +1,68 @@
-@.str0 = private unnamed_addr constant [21 x i8]  c"Inicio del programa\n", align 1
-@.str1 = private unnamed_addr constant [1 x i8]  c"a", align 1
-@.str2 = private unnamed_addr constant [2 x i8]  c"\n", align 1
-@.str3 = private unnamed_addr constant [10 x i8]  c"No a y b\n", align 1
-@.str4 = private unnamed_addr constant [4 x i8]  c"c = ", align 1
-@.str5 = private unnamed_addr constant [2 x i8]  c"\n", align 1
-@.str6 = private unnamed_addr constant [5 x i8]  c"Final", align 1
-@.str7 = private unnamed_addr constant [2 x i8]  c"\n", align 1
+@.str = private unnamed_addr constant [2 x i8]  c"%d", align 1
+@a = global i32 0
+@b = global i32 0
+@c = global i32 0
+@.str.0 = private unnamed_addr constant [20 x i8]  c"Inicio del programa\0A", align 1
+@.str.1 = private unnamed_addr constant [1 x i8]  c"a", align 1
+@.str.2 = private unnamed_addr constant [1 x i8]  c"\0A", align 1
+@.str.3 = private unnamed_addr constant [9 x i8]  c"No a y b\0A", align 1
+@.str.4 = private unnamed_addr constant [4 x i8]  c"c = ", align 1
+@.str.5 = private unnamed_addr constant [1 x i8]  c"\0A", align 1
+@.str.6 = private unnamed_addr constant [5 x i8]  c"Final", align 1
+@.str.7 = private unnamed_addr constant [1 x i8]  c"\0A", align 1
 
-define dso_local i32 @main() #0{
+define i32 @main() #0{
 
-	%1 = alloca i32, align 4
-	store i32 0, ptr %1, align 4
-	%a = alloca i32, align 4
-	store ptr %1, ptr %a, align 4
-	%2 = alloca i32, align 4
-	store i32 0, ptr %2, align 4
-	%b = alloca i32, align 4
-	store ptr %2, ptr %b, align 4
-	%3 = alloca i32, align 4
-	store i32 5, ptr %3, align 4
-	%4 = alloca i32, align 4
-	store i32 2, ptr %4, align 4
-	%5 = add %3, %4
-	%6 = alloca i32, align 4
-	store i32 2, ptr %6, align 4
-	%7 = sub %5, %6
-	%c = alloca i32, align 4
-	store i32 %7, ptr %c, align 4
-	%8 = call i32 (ptr, ...) @printf (ptr noundef @.str.0)
-	%34 = icmp eq i32 %9, %33
-	br i1 %34, label %35, label %36
+	%R1 = add i32 0, 0
+	store i32 %R1, i32* @a
+	%R2 = add i32 0, 0
+	store i32 %R2, i32* @b
+	%R3 = add i32 0, 0
+	store i32 %R3, i32* @c
+	%R4 = call i32 (ptr, ...) @printf (ptr noundef @.str.0)
+	%R5 = load i32, i32* @a
+	%dbg = call i32 (ptr, ...) @printf (ptr noundef @.str, i32 noundef %R5)
+	%R27 = icmp ne i32 %R5, 0
+	br i1 %R27, label %tag28, label %tag29
 
-35:
-	%10 = call i32 (ptr, ...) @printf (ptr noundef @.str.1)
-	%11 = call i32 (ptr, ...) @printf (ptr noundef @.str.2)
+tag28:
+	%R6 = call i32 (ptr, ...) @printf (ptr noundef @.str.1)
+	%R7 = call i32 (ptr, ...) @printf (ptr noundef @.str.2)
+	br label %tag29
 
-36:
-	%30 = icmp eq i32 %12, %29
-	br i1 %30, label %31, label %32
+tag29:
+	%R8 = load i32, i32* @b
+	%R24 = icmp ne i32 %R8, 0
+	br i1 %R24, label %tag25, label %tag26
 
-31:
-	%13 = call i32 (ptr, ...) @printf (ptr noundef @.str.3)
+tag25:
+	%R9 = call i32 (ptr, ...) @printf (ptr noundef @.str.3)
+	br label %tag26
 
-32:
+tag26:
+	br label %tag20
 
-26:
-	%25 = icmp eq i32 %14, %24
-	br i1 %25, label %27, label %28
+tag20:
+	%R10 = load i32, i32* @c
+	%R23 = icmp ne i32 %R10, 0
+	br i1 %R23, label %tag21, label %tag22
 
-27:
-	%15 = call i32 (ptr, ...) @printf (ptr noundef @.str.4)
-	%17 = call i32 (ptr, ...) @printf (ptr noundef %16)
-	%18 = call i32 (ptr, ...) @printf (ptr noundef @.str.2)
-	%19 = alloca i32, align 4
-	store i32 %c, ptr %19, align 4
-	%20 = alloca i32, align 4
-	store i32 2, ptr %20, align 4
-	%21 = sub %19, %20
-	%22 = alloca i32, align 4
-	store i32 1, ptr %22, align 4
-	%23 = add %21, %22
-	store4 i32 %c, ptr %23, align 4
-	br label %26
+tag21:
+	%R11 = call i32 (ptr, ...) @printf (ptr noundef @.str.4)
+	%R12 = load i32, i32* @c
+	%R13 = call i32 (ptr, ...) @printf (ptr noundef @.str, i32 noundef %R12)
+	%R14 = call i32 (ptr, ...) @printf (ptr noundef @.str.2)
+	%R15 = load i32, i32* @c
+	%R16 = add i32 0, 2
+	%R17 = sub i32 %R15, %R16
+	%R18 = add i32 0, 1
+	%R19 = add i32 %R17, %R18
+	store i32 %R19, i32* @c
+	br label %tag20
 
-28:
-	%37 = call i32 (ptr, ...) @printf (ptr noundef @.str.6)
-	%38 = call i32 (ptr, ...) @printf (ptr noundef @.str.2)
+tag22:
+	%R30 = call i32 (ptr, ...) @printf (ptr noundef @.str.6)
+	%R31 = call i32 (ptr, ...) @printf (ptr noundef @.str.2)
+	 ret i32 0
 }
 declare i32 @printf(ptr noundef, ...) #1

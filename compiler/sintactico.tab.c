@@ -1322,7 +1322,7 @@ yyreduce:
                                    {
 	  				AÑADIR_ID((yyvsp[-2].string),tipo);
 					if(!error){
-						ListaC aux1 = allocStoreId(recuperaResLC((yyvsp[0].codigo)),obtenerId((yyvsp[-2].string)));
+						ListaC aux1 = creaLineaCodigo("store",obtenerId((yyvsp[-2].string)),recuperaResLC((yyvsp[0].codigo)),NULL);
 						(yyval.codigo) = creaCodigo(2,(yyvsp[0].codigo),aux1);
 					}
 	  			   }
@@ -1346,8 +1346,8 @@ yyreduce:
                                             {
 	 					ASIG_VALIDA((yyvsp[-3].string));
 						if(!error){
-							char *regRes = recuperaResLC((yyvsp[-1].codigo));
-							(yyval.codigo) = creaCodigo(2,(yyvsp[-1].codigo),creaLineaCodigo("store4",regRes,obtenerId((yyvsp[-3].string)),NULL));
+							ListaC aux1 = creaLineaCodigo("store",obtenerId((yyvsp[-3].string)),recuperaResLC((yyvsp[-1].codigo)),NULL);
+							(yyval.codigo) = creaCodigo(2,(yyvsp[-1].codigo),aux1);
 						}
 					    }
 #line 1354 "sintactico.tab.c"
@@ -1623,7 +1623,7 @@ yyreduce:
                {
 			if(!error){
 				if(!pertenece((yyvsp[0].string),l)){PRINT_ERROR("Error semántico en la linea %d variable %s no declarada\n",yylineno,(yyvsp[0].string)); error = true ;semErrors++;}
-				(yyval.codigo) = allocStore(obtenerId((yyvsp[0].string)));
+				(yyval.codigo) = creaLineaCodigo("load",getRegister(),obtenerId((yyvsp[0].string)),NULL);
 			}
 		}
 #line 1630 "sintactico.tab.c"
@@ -1631,7 +1631,7 @@ yyreduce:
 
   case 60: /* expression: NUM  */
 #line 166 "sintactico.y"
-                 {  if(!error){ (yyval.codigo) = allocStore((yyvsp[0].string));} }
+                 {  if(!error){ (yyval.codigo) = creaLineaCodigo("add",getRegister(),"0",(yyvsp[0].string));} }
 #line 1636 "sintactico.tab.c"
     break;
 

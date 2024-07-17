@@ -28,7 +28,7 @@ Operacion creaOp(char *op, char *res ,char *arg1, char*arg2){
 // devuelve un cadena que representa un registro libre
 char *getRegister(){
 	char reg[BUFSIZE] = {0};
-	sprintf(reg,"%%%d",cont);
+	sprintf(reg,"%%R%d",cont);
 	cont++;
 	return strdup(reg);
 }
@@ -71,6 +71,7 @@ void imprimeCodigo(ListaC codigo){
 
 	FILE *fptr = fopen(FILEOUT, "a");
 
+	fprintf(fptr,"\ndefine dso_local i32 @main() #0{\n\n"); // header
 	for(PosicionListaC p = inicioLC(codigo); p != finalLC(codigo); p = siguienteLC(codigo,p)){
 		Operacion op = recuperaLC(codigo,p);
 		if(op.res == NULL){
@@ -83,20 +84,26 @@ void imprimeCodigo(ListaC codigo){
 			else
 				fprintf(fptr,"\t%s %s\n",op.op,op.res);
 		}else if(op.arg2 == NULL){ // un solo operando
-			if(op.op[0] == 'c')
-				fprintf(fptr,"\t%s = %s i32 (ptr, ...) @printf (ptr noundef %s)\n",op.res,op.op,op.arg1);
-			else
-				fprintf(fptr,"\t%s i32 %s, ptr %s, align 4\n",op.op,op.arg1,op.res);
+			if(op.op[0] == 's') // store
+				fprintf(fptr,"\t%s i32 %s, i32* %s\n",op.op,op.arg1,op.res);
+			else //load
+				fprintf(fptr,"\t%s = %s i32, i32* %s\n",op.res,op.op,op.arg1);
 		}else{
 			if(op.op[0] == 'e' || op.op[0] == 'n') // comparison
 				fprintf(fptr,"\t%s = icmp %s i32 %s, %s\n",op.res,op.op,op.arg1,op.arg2);
 			else if(op.op[0] == 'b') // branch
 				fprintf(fptr,"\t%s i1 %s, label %%%s, label %%%s\n",op.op,op.res,op.arg1,op.arg2);
+			else if(op.op[0] == 'c') // printf call
+				if(op.arg2[0] == '0') // string
+					fprintf(fptr,"\t%s = %s i32 (ptr, ...) @printf (ptr noundef %s)\n",op.res,op.op,op.arg1);
+				else // integer
+					fprintf(fptr,"\t%s = %s i32 (ptr, ...) @printf (ptr noundef @.str, i32 noundef %s)\n",op.res,op.op,op.arg1);
 			else
-				fprintf(fptr,"\t%s = %s %s, %s\n",op.res,op.op,op.arg1,op.arg2);
+				fprintf(fptr,"\t%s = %s i32 %s, %s\n",op.res,op.op,op.arg1,op.arg2);
 		}
 	}
 
+	fprintf(fptr,"\t ret i32 0\n");
 	fprintf(fptr,"}\n");
 	fprintf(fptr,"declare i32 @printf(ptr noundef, ...) #1");
 
@@ -117,22 +124,22 @@ ListaC aritExpr(char *op,ListaC a, ListaC b){
 void imprimeSegDatos(Lista l){
 
 	FILE *fptr = fopen(FILEOUT, "w");
+	fprintf(fptr,"@.str = private unnamed_addr constant [2 x i8]  c\"%%d\", align 1\n"); // to print integers
 	for(PosicionLista p = inicioLS(l); p != finalLS(l); p = siguienteLS(l,p)){
 		Simbolo aux = recuperaLS(l,p);
 		if(aux.tipo == CADENA){
-			fprintf(fptr,"@.str%d = private unnamed_addr constant [%ld x i8]  c%s, align 1\n",aux.valor, strlen(aux.nombre)-2 ,aux.nombre);
+			fprintf(fptr,"@.str.%d = private unnamed_addr constant [%ld x i8]  c%s, align 1\n",aux.valor, strlen(aux.nombre)-2 ,aux.nombre);
 		}else{
-			//fprintf(fptr,"_%s: .word %d\n",aux.nombre,aux.valor);
+			fprintf(fptr,"@%s = global i32 %d\n",aux.nombre,aux.valor);
 		}
 	}
 
-	fprintf(fptr,"\ndefine dso_local i32 @main() #0{\n\n");
 	fclose(fptr);
 }
 
 char *creaEtiqueta(){
 	char tag[BUFSIZE] = {0};
-	sprintf(tag,"%d",cont);
+	sprintf(tag,"tag%d",cont);
 	cont++;
 	return strdup(tag);
 }
@@ -140,7 +147,7 @@ char *creaEtiqueta(){
 // dado un nombre de variable la devuelve con el _
 char *obtenerId(char *var){
  	char id[BUFSIZE] = {0};
-	strcpy(id,"%");
+	strcpy(id,"@");
 	strcat(id,var);
 	return strdup(id);
 }
@@ -153,17 +160,24 @@ ListaC leerId(char *id){
 
 }
 
+ListaC compareConst(char* inst, ListaC expr1, char *constant){
+	ListaC linea1 = creaLineaCodigo(inst,getRegister(),recuperaResLC(expr1),constant);
+	return creaCodigo(2,expr1,linea1);
+}
+
+
 ListaC imprimirCadena(char *str, Lista l){
 	int strnum = recuperaLS(l,buscaLS(l,str)).valor;
 	char strid[BUFSIZE] = {0};
 	sprintf(strid,"@.str.%d",strnum);
 	char *print = strdup(strid);
-	return creaLineaCodigo("call",getRegister(),print,NULL);
+	return creaLineaCodigo("call",getRegister(),print,"0"); // last field for metadata 0 -> String 1 -> Integer
 
 }
 
 ListaC imprimirExpresion(ListaC exp){
-	 return creaLineaCodigo("call",getRegister(),recuperaResLC(exp),NULL);
+	 ListaC linea1 = creaLineaCodigo("call",getRegister(),recuperaResLC(exp),"1");
+	 return creaCodigo(2,exp,linea1);
 }
 
 ListaC imprimirIf(ListaC expr, ListaC stmt){
@@ -172,18 +186,19 @@ ListaC imprimirIf(ListaC expr, ListaC stmt){
 	     jump epxr etiq1 etiq2
 	     etiq1
 	     	stmt
+		jump etiq2
 	     etiq2
 	  */
 
-	  ListaC aux = creaLineaCodigo("store",getRegister(),"0",NULL);
-	  ListaC linea1 = compare("eq",expr,aux);
+	  ListaC linea1 = compareConst("ne",expr,"0");
 	  // second arg here is the condition
 	  char *tag1 = creaEtiqueta();
 	  char *tag2 = creaEtiqueta();
 	  ListaC etiq1 = creaLineaCodigo(tag1,NULL,NULL,NULL);
 	  ListaC etiq2 = creaLineaCodigo(tag2,NULL,NULL,NULL);
 	  ListaC linea2 = creaLineaCodigo("br",recuperaResLC(linea1),tag1,tag2);
-	  return creaCodigo(5,linea1,linea2,etiq1,stmt,etiq2);
+	  ListaC linea3 = creaLineaCodigo("br",tag2,NULL,NULL); // terminator instruction
+	  return creaCodigo(6,linea1,linea2,etiq1,stmt,linea3,etiq2);
 
 }
 
@@ -193,9 +208,12 @@ ListaC imprimirIfElse(ListaC expr, ListaC stmt1, ListaC stmt2){
 	     jump epxr etiq1 etiq2
 	     etiq1
 	     	stmt1
+		jump eitq2
 	     etiq2
 	     	stmt2
+		jump
 	  */
+
 	ListaC If = imprimirIf(expr,stmt1);
 	return creaCodigo(2,If,stmt2);
 
@@ -203,6 +221,7 @@ ListaC imprimirIfElse(ListaC expr, ListaC stmt1, ListaC stmt2){
 
 ListaC imprimirWhile(ListaC expr, ListaC stmt){
 	/*
+	   	jump etiq1
 		etiq1
 		expr
 		jump expr etiq2 etiq3
@@ -211,8 +230,6 @@ ListaC imprimirWhile(ListaC expr, ListaC stmt){
 		jump etiq1
 		etiq3
 	*/
-	ListaC aux = creaLineaCodigo("store",getRegister(),"0",NULL);
-	ListaC linea1 = compare("eq",expr,aux);
 	// second arg here is the condition
 	char *tag1 = creaEtiqueta();
 	char *tag2 = creaEtiqueta();
@@ -220,9 +237,11 @@ ListaC imprimirWhile(ListaC expr, ListaC stmt){
 	ListaC etiq1 = creaLineaCodigo(tag1,NULL,NULL,NULL);
 	ListaC etiq2 = creaLineaCodigo(tag2,NULL,NULL,NULL);
 	ListaC etiq3 = creaLineaCodigo(tag3,NULL,NULL,NULL);
+	ListaC linea0 = creaLineaCodigo("br",tag1,NULL,NULL);
+	ListaC linea1 = compareConst("ne",expr,"0");
 	ListaC linea2 = creaLineaCodigo("br",recuperaResLC(linea1),tag2,tag3);
 	ListaC linea3 = creaLineaCodigo("br",tag1,NULL,NULL);
-	return creaCodigo(7,etiq1,linea1,linea2,etiq2,stmt,linea3,etiq3);
+	return creaCodigo(8,linea0,etiq1,linea1,linea2,etiq2,stmt,linea3,etiq3);
 }
 
 ListaC imprimirDoWhile(ListaC stmt, ListaC expr){
@@ -234,7 +253,7 @@ ListaC imprimirDoWhile(ListaC stmt, ListaC expr){
 		etiq2
 	*/
 
-	ListaC linea1 = compare("eq",expr,0);
+	ListaC linea1 = compareConst("ne",expr,"0");
 	// second arg here is the condition
 	char *tag1 = creaEtiqueta();
 	char *tag2 = creaEtiqueta();
@@ -247,8 +266,10 @@ ListaC imprimirDoWhile(ListaC stmt, ListaC expr){
 
 // use cmp + instr
 ListaC compare(char* inst, ListaC expr1, ListaC expr2){
-	return creaLineaCodigo(inst,getRegister(),recuperaResLC(expr1),recuperaResLC(expr2));
+	ListaC linea1 = creaLineaCodigo(inst,getRegister(),recuperaResLC(expr1),recuperaResLC(expr2));
+	return creaCodigo(3,expr1,expr2,linea1);
 }
+
 
 
 ListaC not(ListaC expr){
@@ -256,15 +277,15 @@ ListaC not(ListaC expr){
 	return compare("eq",expr,aux);
 }
 
-ListaC allocStoreId(char *value, char *regRes){
+/*ListaC allocStoreId(char *value, char *regRes){
 
 	ListaC linea1 = creaLineaCodigo("alloca",regRes,NULL,NULL);
 	ListaC linea2 = creaLineaCodigo("store",regRes,value,NULL);
 	return creaCodigo(2,linea1,linea2);
 
-}
+}*/
 
-ListaC allocStore(char *value){
+/*ListaC allocStore(char *value){
 	return allocStoreId(value,getRegister());
-}
+}*/
 

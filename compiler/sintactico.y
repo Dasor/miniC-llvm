@@ -72,7 +72,7 @@ identifier: ID {AÑADIR_ID($1,tipo); if(!error){$$ = creaLC();}}
 	  | ID ASSIGNOP expression {
 	  				AÑADIR_ID($1,tipo);
 					if(!error){
-						ListaC aux1 = allocStoreId(recuperaResLC($3),obtenerId($1));
+						ListaC aux1 = creaLineaCodigo("store",obtenerId($1),recuperaResLC($3),NULL);
 						$$ = creaCodigo(2,$3,aux1);
 					}
 	  			   };
@@ -85,8 +85,8 @@ statement_list: statement_list statement { if(!error){$$ = creaCodigo(2,$1,$2);}
 statement: ID ASSIGNOP expression SEMICOLON {
 	 					ASIG_VALIDA($1);
 						if(!error){
-							char *regRes = recuperaResLC($3);
-							$$ = creaCodigo(2,$3,creaLineaCodigo("store4",regRes,obtenerId($1),NULL));
+							ListaC aux1 = creaLineaCodigo("store",obtenerId($1),recuperaResLC($3),NULL);
+							$$ = creaCodigo(2,$3,aux1);
 						}
 					    }
          | LCORCHETE statement_list RCORCHETE { if(!error){$$ = $2; }}
@@ -160,10 +160,10 @@ expression: expression PLUSOP expression { if(!error){$$ = aritExpr("add",$1,$3)
 	  | ID {
 			if(!error){
 				if(!pertenece($1,l)){PRINT_ERROR("Error semántico en la linea %d variable %s no declarada\n",yylineno,$1); error = true ;semErrors++;}
-				$$ = allocStore(obtenerId($1));
+				$$ = creaLineaCodigo("load",getRegister(),obtenerId($1),NULL);
 			}
 		}
-	  | NUM  {  if(!error){ $$ = allocStore($1);} }
+	  | NUM  {  if(!error){ $$ = creaLineaCodigo("add",getRegister(),"0",$1);} }
 
 
 %%
