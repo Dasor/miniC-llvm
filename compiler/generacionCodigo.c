@@ -11,7 +11,7 @@
 #define RED 	"\033[0;31m"
 #define RESET   "\033[0m"
 #define PRINT_ERROR(fmt, ...) fprintf(stderr, RED fmt RESET, ##__VA_ARGS__) // ## sirve para que no ponga coma si no hay args https://gcc.gnu.org/onlinedocs/gcc/Variadic-Macros.html
-#define FILEOUT "prog.ll"
+#define FILEOUT "out/prog.ll"
 int cont=1;
 
 Operacion creaOp(char *op, char *res ,char *arg1, char*arg2){
@@ -71,40 +71,40 @@ void imprimeCodigo(ListaC codigo){
 
 	FILE *fptr = fopen(FILEOUT, "a");
 
-	fprintf(fptr,"\ndefine dso_local i32 @main() #0{\n\n"); // header
+	fprintf(fptr,"\ndefine dso_local i32 @main() #0{\n"); // header
 	for(PosicionListaC p = inicioLC(codigo); p != finalLC(codigo); p = siguienteLC(codigo,p)){
 		Operacion op = recuperaLC(codigo,p);
 		if(op.res == NULL){
 			fprintf(fptr,"\n%s:\n",op.op);
 		}else if(op.arg1 == NULL){ // salto incondicional
 			if(op.op[0] == 'a') // allocate
-				fprintf(fptr,"\t%s = %s i32, align 4\n",op.res,op.op);
+				fprintf(fptr,"  %s = %s i32, align 4\n",op.res,op.op);
 			else if(op.op[0] == 'b') // branch
-				fprintf(fptr,"\t%s label %%%s\n",op.op,op.res);
+				fprintf(fptr,"  %s label %%%s\n",op.op,op.res);
 			else
-				fprintf(fptr,"\t%s %s\n",op.op,op.res);
+				fprintf(fptr,"  %s %s\n",op.op,op.res);
 		}else if(op.arg2 == NULL){ // un solo operando
 			if(op.op[0] == 's') // store
-				fprintf(fptr,"\t%s i32 %s, i32* %s\n",op.op,op.arg1,op.res);
+				fprintf(fptr,"  %s i32 %s, i32* %s\n",op.op,op.arg1,op.res);
 			else //load
-				fprintf(fptr,"\t%s = %s i32, i32* %s\n",op.res,op.op,op.arg1);
+				fprintf(fptr,"  %s = %s i32, i32* %s\n",op.res,op.op,op.arg1);
 		}else{
 			if(op.op[0] == 'e' || op.op[0] == 'n') // comparison
-				fprintf(fptr,"\t%s = icmp %s i32 %s, %s\n",op.res,op.op,op.arg1,op.arg2);
+				fprintf(fptr,"  %s = icmp %s i32 %s, %s\n",op.res,op.op,op.arg1,op.arg2);
 			else if(op.op[0] == 'b') // branch
-				fprintf(fptr,"\t%s i1 %s, label %%%s, label %%%s\n",op.op,op.res,op.arg1,op.arg2);
+				fprintf(fptr,"  %s i1 %s, label %%%s, label %%%s\n",op.op,op.res,op.arg1,op.arg2);
 			else if(op.op[0] == 'c') // printf call
 				if(op.arg2[0] == '0') // string
-					fprintf(fptr,"\t%s = %s i32 (ptr, ...) @printf (ptr noundef %s)\n",op.res,op.op,op.arg1);
+					fprintf(fptr,"  %s = %s i32 (ptr, ...) @printf (ptr noundef %s)\n",op.res,op.op,op.arg1);
 				else // integer
-					fprintf(fptr,"\t%s = %s i32 (ptr, ...) @printf (ptr noundef @.str, i32 noundef %s)\n",op.res,op.op,op.arg1);
+					fprintf(fptr,"  %s = %s i32 (ptr, ...) @printf (ptr noundef @.str, i32 noundef %s)\n",op.res,op.op,op.arg1);
 			else
-				fprintf(fptr,"\t%s = %s i32 %s, %s\n",op.res,op.op,op.arg1,op.arg2);
+				fprintf(fptr,"  %s = %s i32 %s, %s\n",op.res,op.op,op.arg1,op.arg2);
 		}
 	}
 
-	fprintf(fptr,"\t ret i32 0\n");
-	fprintf(fptr,"}\n");
+	fprintf(fptr,"  ret i32 0\n");
+	fprintf(fptr,"}\n\n");
 	fprintf(fptr,"declare i32 @printf(ptr noundef, ...) #1");
 
 	liberaLC(codigo);
@@ -121,14 +121,35 @@ ListaC aritExpr(char *op,ListaC a, ListaC b){
 	return resultado;
 }
 
+
+size_t stringlen(char *str){
+
+	size_t i = 0;
+	size_t count = 0;
+	while(str[i] != '\0'){
+		i++;
+		count++;
+		if(str[i] == '\\'){
+			count -=2;
+		}
+	}
+
+	return count;
+
+}
+
 void imprimeSegDatos(Lista l){
 
 	FILE *fptr = fopen(FILEOUT, "w");
-	fprintf(fptr,"@.str = private unnamed_addr constant [2 x i8]  c\"%%d\", align 1\n"); // to print integers
+	fprintf(fptr,"@.str = private unnamed_addr constant [3 x i8]  c\"%%d\\00\", align 1\n"); // to print integers
 	for(PosicionLista p = inicioLS(l); p != finalLS(l); p = siguienteLS(l,p)){
 		Simbolo aux = recuperaLS(l,p);
 		if(aux.tipo == CADENA){
-			fprintf(fptr,"@.str.%d = private unnamed_addr constant [%ld x i8]  c%s, align 1\n",aux.valor, strlen(aux.nombre)-2 ,aux.nombre);
+			size_t len = strlen(aux.nombre);
+			char *str = (char *) malloc(sizeof(char)*len+3);
+			strcpy(str,aux.nombre);
+			str[len-1] = '\\'; str[len] = '0'; str[len+1] = '0'; str[len+2] = '"'; str[len+3] = '\0';
+			fprintf(fptr,"@.str.%d = private unnamed_addr constant [%ld x i8]  c%s, align 1\n",aux.valor,stringlen(str)-2,str);
 		}else{
 			fprintf(fptr,"@%s = global i32 %d\n",aux.nombre,aux.valor);
 		}
@@ -246,6 +267,7 @@ ListaC imprimirWhile(ListaC expr, ListaC stmt){
 
 ListaC imprimirDoWhile(ListaC stmt, ListaC expr){
 	/*
+	   	jump etiq1
 		etiq1
 		stmt
 		expr
@@ -253,14 +275,15 @@ ListaC imprimirDoWhile(ListaC stmt, ListaC expr){
 		etiq2
 	*/
 
-	ListaC linea1 = compareConst("ne",expr,"0");
 	// second arg here is the condition
 	char *tag1 = creaEtiqueta();
 	char *tag2 = creaEtiqueta();
 	ListaC etiq1 = creaLineaCodigo(tag1,NULL,NULL,NULL);
 	ListaC etiq2 = creaLineaCodigo(tag2,NULL,NULL,NULL);
+	ListaC linea1 = compareConst("ne",expr,"0");
+	ListaC linea0 = creaLineaCodigo("br",tag1,NULL,NULL);
 	ListaC linea2 = creaLineaCodigo("br",recuperaResLC(linea1),tag1,tag2);
-	return creaCodigo(4,etiq1,stmt,linea1,linea2,etiq2);
+	return creaCodigo(6,linea0,etiq1,stmt,linea1,linea2,etiq2);
 }
 
 
