@@ -63,7 +63,7 @@ do					    return DO;
 "!"					    return UNOT;
 \"([^"\n]|{escape})*\"			    yylval.string=strdup(yytext);return STRING;
 \"([^"\n]|{escape})*			    PRINT_ERROR("Error lexico cadena sin cerrar en la linea %d\n",yylineno); lexErrors++; error = true; return STRING;
-[^a-zA-Z0-9();,=+\-{}*/_<>&|!\n\t\r ]*      PRINT_ERROR("Error lexico en caracter %s linea %d\n",yytext, yylineno); lexErrors++; error = true;
+[^a-zA-Z0-9();",=+\-{}*/_<>&|!\n\t\r ]*     PRINT_ERROR("Error lexico en caracter %s linea %d\n",yytext, yylineno); lexErrors++; error = true;
 %%
 
 void overflow(){

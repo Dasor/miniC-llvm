@@ -64,8 +64,8 @@ declarations: declarations VAR {tipo=VARIABLE;} identifier_list SEMICOLON { if(!
 	    | declarations CONST {tipo=CONSTANTE;} identifier_list SEMICOLON { if(!error){$$ = creaCodigo(2,$$,$4); }}
 	    | /* empty */  { if(!error){$$ = creaLC();}};
 
-identifier_list: identifier { $$ = $1;}
-	      | identifier_list COMMA identifier {$$ = creaCodigo(2,$1,$3);}  ;
+identifier_list: identifier { if(!error){$$ = $1;}}
+	      | identifier_list COMMA identifier {if(!error){$$ = creaCodigo(2,$1,$3);}}  ;
 
 
 identifier: ID {AÑADIR_ID($1,tipo); if(!error){$$ = creaLC();}}
