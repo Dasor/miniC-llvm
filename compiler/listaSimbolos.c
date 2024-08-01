@@ -17,8 +17,8 @@ struct ListaRep {
 typedef struct PosicionListaRep *NodoPtr;
 
 Lista creaLS() {
-  Lista nueva = malloc(sizeof(struct ListaRep));
-  nueva->cabecera = malloc(sizeof(struct PosicionListaRep));
+  Lista nueva = (Lista) malloc(sizeof(struct ListaRep));
+  nueva->cabecera = (PosicionLista) malloc(sizeof(struct PosicionListaRep));
   nueva->cabecera->sig = NULL;
   nueva->ultimo = nueva->cabecera;
   nueva->n = 0;
@@ -35,7 +35,7 @@ void liberaLS(Lista lista) {
 }
 
 void insertaLS(Lista lista, PosicionLista p, Simbolo s) {
-  NodoPtr nuevo = malloc(sizeof(struct PosicionListaRep));
+  NodoPtr nuevo = (NodoPtr) malloc(sizeof(struct PosicionListaRep));
   nuevo->dato = s;
   nuevo->sig = p->sig;
   p->sig = nuevo;

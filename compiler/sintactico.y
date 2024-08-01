@@ -6,6 +6,12 @@
 #include "listaSimbolos.h"
 #include "listaCodigo.h"
 #include "generacionCodigo.h"
+// LLVM
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Verifier.h>
+#include <llvm/Support/raw_ostream.h>
 #define RED 	"\033[0;31m"
 #define RESET   "\033[0m"
 #define PRINT_ERROR(fmt, ...) fprintf(stderr, RED fmt RESET, ##__VA_ARGS__) // ## sirve para que no ponga coma si no hay args https://gcc.gnu.org/onlinedocs/gcc/Variadic-Macros.html
@@ -16,7 +22,8 @@
 #define ASIG_VALIDA(nombre) if (!pertenece(nombre,l)) {PRINT_ERROR("Error semántico en la linea %d variable %s no declarada\n",yylineno,nombre); error=true; semErrors++;} \
 			    else if(esConstante(nombre,l)) {PRINT_ERROR("Error semántico en la linea %d Asignación a la constante %s\n",yylineno,nombre); error=true;semErrors++;}
 
-extern int yylex();
+extern "C" int yylex();
+void yyerror(std::string str);
 void yyerror();
 extern int yylineno;
 bool error = false;
@@ -27,6 +34,15 @@ extern int lexErrors;
 Tipo tipo;
 Lista l;
 int contCadenas=0;
+
+llvm::LLVMContext Context;
+std::unique_ptr<llvm::Module> Module;
+llvm::IRBuilder<> *Builder;
+
+void initializeLLVM() {
+    Module = std::make_unique<llvm::Module>("my_module", Context);
+    Builder = new llvm::IRBuilder<>(Context);
+}
 
 %}
 
@@ -149,7 +165,7 @@ expression: expression PLUSOP expression { if(!error){$$ = aritExpr("add",$1,$3)
 	  | expression NOTEQOP expression { if(!error){$$ = compare("ne",$1,$3);}}
 	  | expression AND expression { if(!error){$$ = aritExpr("and",$1,$3);}}
 	  | expression OR expression { if(!error){$$ = aritExpr("or",$1,$3);}}
-	  | UNOT expression { if(!error){$$ = not($2);}}
+	  | UNOT expression { if(!error){$$ = Not($2);}}
 	  | MINUSOP expression %prec UMINUS {
 						if(!error){
 							char *regRes = recuperaResLC($2);
@@ -168,6 +184,10 @@ expression: expression PLUSOP expression { if(!error){$$ = aritExpr("add",$1,$3)
 
 %%
 
+
+void yyerror(std::string str){
+	PRINT_ERROR("Error sintáctico en la linea %d ",yylineno);
+}
 
 void yyerror(){
 	PRINT_ERROR("Error sintáctico en la linea %d ",yylineno);

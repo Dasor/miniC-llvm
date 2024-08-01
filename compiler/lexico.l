@@ -6,6 +6,7 @@
 #define RESET   "\033[0m"
 #define PRINT_ERROR(fmt, ...) fprintf(stderr, RED fmt RESET, ##__VA_ARGS__) // ## sirve para que no ponga coma si no hay args https://gcc.gnu.org/onlinedocs/gcc/Variadic-Macros.html
 #define MAX_NUM 2147483648
+extern "C" int yylex();
 void overflow();
 void id_len();
 int lexErrors = 0;

@@ -18,8 +18,8 @@ struct ListaCRep {
 typedef struct PosicionListaCRep *NodoPtr;
 
 ListaC creaLC() {
-  ListaC nueva = malloc(sizeof(struct ListaCRep));
-  nueva->cabecera = malloc(sizeof(struct PosicionListaCRep));
+  ListaC nueva = (ListaC) malloc(sizeof(struct ListaCRep));
+  nueva->cabecera = (PosicionListaC) malloc(sizeof(struct PosicionListaCRep));
   nueva->cabecera->sig = NULL;
   nueva->ultimo = nueva->cabecera;
   nueva->n = 0;
@@ -37,7 +37,7 @@ void liberaLC(ListaC codigo) {
 }
 
 void insertaLC(ListaC codigo, PosicionListaC p, Operacion o) {
-  NodoPtr nuevo = malloc(sizeof(struct PosicionListaCRep));
+  NodoPtr nuevo = (NodoPtr) malloc(sizeof(struct PosicionListaCRep));
   nuevo->dato = o;
   nuevo->sig = p->sig;
   p->sig = nuevo;
@@ -57,7 +57,7 @@ PosicionListaC buscaLC(ListaC codigo, PosicionListaC p, char *clave, Campo campo
   char *info;
   while (aux->sig != NULL) {
     switch (campo) {
-      case OPERACION: 
+      case OPERACION:
         info = aux->sig->dato.op;
         break;
       case ARGUMENTO1:
@@ -114,3 +114,4 @@ void guardaResLC(ListaC codigo, char *res) {
 char * recuperaResLC(ListaC codigo) {
   return codigo->res;
 }
+

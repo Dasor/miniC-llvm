@@ -295,7 +295,7 @@ ListaC compare(char* inst, ListaC expr1, ListaC expr2){
 
 
 
-ListaC not(ListaC expr){
+ListaC Not(ListaC expr){
 	ListaC aux = creaLineaCodigo("store",getRegister(),"0",NULL);
 	return compare("eq",expr,aux);
 }
