@@ -38,11 +38,8 @@ int contCadenas=0;
 llvm::LLVMContext Context;
 std::unique_ptr<llvm::Module> Module;
 llvm::IRBuilder<> *Builder;
+void initializeLLVM();
 
-void initializeLLVM() {
-    Module = std::make_unique<llvm::Module>("my_module", Context);
-    Builder = new llvm::IRBuilder<>(Context);
-}
 
 %}
 
@@ -193,5 +190,13 @@ void yyerror(){
 	PRINT_ERROR("Error sintáctico en la linea %d ",yylineno);
 	error = true;
 	sinErrors++;
+}
 
+void initializeLLVM() {
+	Module = std::make_unique<llvm::Module>("my_module", Context);
+	Builder = new llvm::IRBuilder<>(Context);
+	llvm::FunctionType *FuncType = llvm::FunctionType::get(llvm::Type::getInt32Ty(Context), false);
+	llvm::Function *MainFunc = llvm::Function::Create(FuncType, llvm::Function::ExternalLinkage, "main", *Module);
+	llvm::BasicBlock *EntryBB = llvm::BasicBlock::Create(Context, "entry", MainFunc);
+	Builder->SetInsertPoint(EntryBB);
 }

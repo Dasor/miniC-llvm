@@ -3,6 +3,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Verifier.h>
+#include <llvm/Support/raw_ostream.h>
 #define RED 	"\033[0;31m"
 #define RESET   "\033[0m"
 #define PRINT_ERROR(fmt, ...) fprintf(stderr, RED fmt RESET, ##__VA_ARGS__) // ## sirve para que no ponga coma si no hay args https://gcc.gnu.org/onlinedocs/gcc/Variadic-Macros.html
@@ -17,6 +22,8 @@ extern bool error;
 extern int lexErrors;
 extern int sinErrors;
 extern int semErrors;
+extern void initializeLLVM();
+extern std::unique_ptr<llvm::Module> Module;
 
 void errors_summary(){
 	if(error)
@@ -33,10 +40,13 @@ int main(int argc, char *argv[]) {
 		printf("No se puede abrir %s\n",argv[1]);
 		exit(1);
 	}
+
+	initializeLLVM();
 	yyin = fich;
 	yyparse();
 	fclose(fich);
 
 	errors_summary();
+	Module->print(llvm::outs(), nullptr);
 }
 
