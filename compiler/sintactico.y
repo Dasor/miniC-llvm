@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
+#include <iostream>
+#include <map>
 #include "listaSimbolos.h"
 #include "listaCodigo.h"
 #include "generacionCodigo.h"
@@ -39,19 +41,30 @@ llvm::LLVMContext Context;
 std::unique_ptr<llvm::Module> Module;
 llvm::IRBuilder<> *Builder;
 void initializeLLVM();
+void printValue(llvm::Value* val);
 
+std::map<std::string, llvm::Value*> tablaSim; // Tabla de Simbolos
 
 %}
 
 // INICIO BISON
+%code requires {
+    #include <llvm/IR/LLVMContext.h>
+    #include <llvm/IR/Module.h>
+    #include <llvm/IR/IRBuilder.h>
+    #include <llvm/IR/Verifier.h>
+    #include <llvm/Support/raw_ostream.h>
+}
+
 
 %union{
 	char* string;
-	ListaC codigo;
+	llvm::Value* value;
+	uint64_t intValue;
 }
 
 %token PRINT VAR READ SEMICOLON COMMA WHILE CONST LCORCHETE RCORCHETE LPAREN RPAREN IF DO
-%token <string> NUM
+%token <intValue> NUM
 %token <string> ID
 %token <string> STRING
 %right ASSIGNOP
@@ -65,49 +78,54 @@ void initializeLLVM();
 %nonassoc NOT_ELSE
 %nonassoc ELSE
 
-%type <codigo> expression statement statement_list print_list print_item read_list identifier identifier_list declarations program
+%type <value> expression statement statement_list print_list print_item read_list identifier identifier_list declarations program
 
 %%
 
-program: ID LPAREN RPAREN LCORCHETE {l=creaLS();} declarations statement_list RCORCHETE { if(!error){$$ = creaCodigo(2,$6,$7) ;imprimeSegDatos(l); imprimeCodigo($$);}}
+program: ID LPAREN RPAREN LCORCHETE declarations statement_list RCORCHETE;
 
-declarations: declarations VAR {tipo=VARIABLE;} identifier_list SEMICOLON { if(!error){$$ = creaCodigo(2,$$,$4);}}
-	    | declarations CONST error SEMICOLON {CLEAN_ERROR;PRINT_ERROR("se esperaban identificadores tras el token const\n");}
-	    | declarations VAR error SEMICOLON {CLEAN_ERROR;PRINT_ERROR("se esperaban identificadores tras el token var\n");}
-	    | declarations CONST {tipo=CONSTANTE;} identifier_list SEMICOLON { if(!error){$$ = creaCodigo(2,$$,$4); }}
-	    | /* empty */  { if(!error){$$ = creaLC();}};
+declarations: declarations VAR identifier_list SEMICOLON
+	    | declarations CONST error SEMICOLON
+	    | declarations VAR error SEMICOLON
+	    | declarations CONST identifier_list SEMICOLON
+	    | /* empty */ ;
 
-identifier_list: identifier { if(!error){$$ = $1;}}
-	      | identifier_list COMMA identifier {if(!error){$$ = creaCodigo(2,$1,$3);}}  ;
+identifier_list: identifier {if(!error){$$ = $1;}}
+	      | identifier_list COMMA identifier;
 
 
-identifier: ID {AÑADIR_ID($1,tipo); if(!error){$$ = creaLC();}}
+identifier: ID {	if(!error){$$ = Builder->CreateAlloca(llvm::Type::getInt32Ty(Context));
+	  		   tablaSim.insert({ $1,$$ });
+	                }
+	       }
 	  | ID ASSIGNOP expression {
-	  				AÑADIR_ID($1,tipo);
-					if(!error){
-						ListaC aux1 = creaLineaCodigo("store",obtenerId($1),recuperaResLC($3),NULL);
-						$$ = creaCodigo(2,$3,aux1);
+					if(!error){$$ = Builder->CreateAlloca(llvm::Type::getInt32Ty(Context));
+					   tablaSim.insert({ $1,$$ });
+					   Builder->CreateStore($3,$$,"");
 					}
-	  			   };
+
+				   };
 
 
-statement_list: statement_list statement { if(!error){$$ = creaCodigo(2,$1,$2);}}
-	      | /* empty */  {if(!error){$$ = creaLC();} };
+statement_list: statement_list statement
+	      | /* empty */ ;
 
 
 statement: ID ASSIGNOP expression SEMICOLON {
-	 					ASIG_VALIDA($1);
-						if(!error){
-							ListaC aux1 = creaLineaCodigo("store",obtenerId($1),recuperaResLC($3),NULL);
-							$$ = creaCodigo(2,$3,aux1);
-						}
-					    }
-         | LCORCHETE statement_list RCORCHETE { if(!error){$$ = $2; }}
-	 | IF LPAREN expression RPAREN statement %prec NOT_ELSE {if(!error){$$ = imprimirIf($3,$5);}}
-	 | IF LPAREN expression RPAREN statement ELSE statement {if(!error){$$ = imprimirIfElse($3,$5,$7);}}
-	 | WHILE LPAREN expression RPAREN statement { if(!error){$$ = imprimirWhile($3,$5);}}
-	 | DO statement WHILE LPAREN expression RPAREN {if(!error){$$ = imprimirDoWhile($2,$5);}}
-	 | PRINT LPAREN print_list RPAREN SEMICOLON { if(!error){$$ = $3; }}
+			if(!error){
+				auto idx = tablaSim.find($1);
+				if(idx == tablaSim.end()){PRINT_ERROR("Error semántico en la linea %d variable %s no declarada\n",yylineno,$1); error = true ;semErrors++;}
+				llvm::Value* val = idx->second;
+				Builder->CreateStore($3,val,"");
+			}
+
+	}
+         | LCORCHETE statement_list RCORCHETE
+	 | IF LPAREN expression RPAREN statement %prec NOT_ELSE
+	 | IF LPAREN expression RPAREN statement ELSE statement
+	 | WHILE LPAREN expression RPAREN statement
+	 | DO statement WHILE LPAREN expression RPAREN
+	 | PRINT LPAREN print_list RPAREN SEMICOLON
 	 /* ERRORES */
 	 | ID ASSIGNOP error {CLEAN_ERROR;PRINT_ERROR("se esperaba ;\n");}
 	 | PRINT error SEMICOLON {CLEAN_ERROR;PRINT_ERROR("sentencia print mal formada\n");} // se olvida de los ()
@@ -123,60 +141,43 @@ statement: ID ASSIGNOP expression SEMICOLON {
 	 | IF error SEMICOLON  {CLEAN_ERROR;PRINT_ERROR("sentencia if mal formada\n");} // se olvida de los ()
 	 | error SEMICOLON {CLEAN_ERROR;PRINT_ERROR("se esperaba ;\n");}
 	/* FIN ERRORES */
-	 | READ LPAREN read_list RPAREN SEMICOLON { if(!error){$$ = $3; }};
+	 | READ LPAREN read_list RPAREN SEMICOLON;
 
-print_list: print_item { if(!error){$$ = $1; }}
-	  | print_list COMMA print_item { if(!error){$$ = creaCodigo(2,$1,$3);} };
-
-
-print_item: expression {
-	  		 if(!error){$$ = imprimirExpresion($1);}
-		       }
-	  | STRING {
-	  		añadeEntrada($1,CADENA,l,contCadenas);
-			if(!error){
-				contCadenas++;
-				$$ = imprimirCadena($1,l);
-			}
-		   };
-
-read_list: ID {
-	 	ASIG_VALIDA($1);
-		if(!error){$$ = leerId($1);}
-	      }
-	 | read_list COMMA ID {
-				ASIG_VALIDA($3);
-	 			if(!error){$$ = creaCodigo(2,$1,leerId($3));}
-			      };
+print_list: print_item
+	  | print_list COMMA print_item
 
 
-expression: expression PLUSOP expression { if(!error){$$ = aritExpr("add",$1,$3);}}
-	  | expression MINUSOP expression { if(!error){$$ = aritExpr("sub",$1,$3);}}
-	  | expression MULTOP expression { if(!error){$$ = aritExpr("mul",$1,$3);}}
-	  | expression DIVOP expression { if(!error){$$ = aritExpr("udiv",$1,$3);}}
-	  | expression LTOP expression { if(!error){$$ = compare("slt",$1,$3);}}
-	  | expression GTOP expression { if(!error){$$ = compare("sgt",$3,$1);}}
-	  | expression GTEOP expression { if(!error){$$ = compare("sge",$1,$3);}}
-	  | expression LTEOP expression { if(!error){$$ = compare("sle",$1,$3);}}
-	  | expression EQOP expression { if(!error){$$ = compare("eq",$1,$3);}}
-	  | expression NOTEQOP expression { if(!error){$$ = compare("ne",$1,$3);}}
-	  | expression AND expression { if(!error){$$ = aritExpr("and",$1,$3);}}
-	  | expression OR expression { if(!error){$$ = aritExpr("or",$1,$3);}}
-	  | UNOT expression { if(!error){$$ = Not($2);}}
-	  | MINUSOP expression %prec UMINUS {
-						if(!error){
-							char *regRes = recuperaResLC($2);
-							$$ = creaCodigo(2,$2,creaLineaCodigo("neg",getRegister(),regRes,NULL));
-						}
-					    }
-	  | LPAREN expression RPAREN { $$ = $2; }
+print_item: expression
+	  | STRING;
+
+read_list: ID
+	 | read_list COMMA ID;
+
+
+expression: expression PLUSOP expression { if(!error){$$ = Builder->CreateAdd($1,$3,"addtmp");}}
+	  | expression MINUSOP expression { if(!error){$$ = Builder->CreateSub($1,$3,"subtmp");}}
+	  | expression MULTOP expression { if(!error){$$ = Builder->CreateMul($1,$3,"multmp");}}
+	  | expression DIVOP expression { if(!error){$$ = Builder->CreateUDiv($1,$3,"divtmp");}}
+	  | expression LTOP expression { if(!error){$$ = Builder->CreateICmpULT($1,$3,"lttmp");}}
+	  | expression GTOP expression { if(!error){$$ = Builder->CreateICmpUGT($1,$3,"gttmp");}}
+	  | expression GTEOP expression { if(!error){$$ = Builder->CreateICmpUGE($1,$3,"gtetmp");}}
+	  | expression LTEOP expression { if(!error){$$ = Builder->CreateICmpULE($1,$3,"uletmp");}}
+	  | expression EQOP expression { if(!error){$$ = Builder->CreateICmpEQ($1,$3,"eqtmp");}}
+	  | expression NOTEQOP expression { if(!error){$$ = Builder->CreateICmpNE($1,$3,"netmp");}}
+	  | expression AND expression { if(!error){$$ = Builder->CreateAnd($1,$3,"andtmp");}}
+	  | expression OR expression  { if(!error){$$ = Builder->CreateOr($1,$3,"ortmp");}}
+	  | UNOT expression {$$ = Builder->CreateNeg($2,"nottmp"); }
+	  | MINUSOP expression %prec UMINUS {$$ = Builder->CreateNeg($2,"negtmp"); }
+	  | LPAREN expression RPAREN { $$ = $2;}
 	  | ID {
-			if(!error){
-				if(!pertenece($1,l)){PRINT_ERROR("Error semántico en la linea %d variable %s no declarada\n",yylineno,$1); error = true ;semErrors++;}
-				$$ = creaLineaCodigo("load",getRegister(),obtenerId($1),NULL);
-			}
+		if(!error){
+			auto idx = tablaSim.find($1);
+			if(idx == tablaSim.end()){PRINT_ERROR("Error semántico en la linea %d variable %s no declarada\n",yylineno,$1); error = true ;semErrors++;}
+			llvm::Value* val = idx->second;
+			$$ = Builder->CreateLoad(val->getType(),val,"");
 		}
-	  | NUM  {  if(!error){ $$ = creaLineaCodigo("add",getRegister(),"0",$1);} }
+	  }
+	  | NUM  {  if(!error){ $$ = llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), $1);};}
 
 
 %%
@@ -199,4 +200,12 @@ void initializeLLVM() {
 	llvm::Function *MainFunc = llvm::Function::Create(FuncType, llvm::Function::ExternalLinkage, "main", *Module);
 	llvm::BasicBlock *EntryBB = llvm::BasicBlock::Create(Context, "entry", MainFunc);
 	Builder->SetInsertPoint(EntryBB);
+}
+
+void printValue(llvm::Value* val){
+	if(llvm::ConstantInt* CI = llvm::dyn_cast<llvm::ConstantInt>(val)){
+		if(CI->getBitWidth() <= 32){
+			std::cout << "value: " << CI->getSExtValue() << std::endl;
+		}
+	}
 }
