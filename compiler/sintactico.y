@@ -6,14 +6,7 @@
 #include <iostream>
 #include <map>
 #include "listaSimbolos.h"
-#include "listaCodigo.h"
 #include "generacionCodigo.h"
-// LLVM
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/Verifier.h>
-#include <llvm/Support/raw_ostream.h>
 #define RED 	"\033[0;31m"
 #define RESET   "\033[0m"
 #define PRINT_ERROR(fmt, ...) fprintf(stderr, RED fmt RESET, ##__VA_ARGS__) // ## sirve para que no ponga coma si no hay args https://gcc.gnu.org/onlinedocs/gcc/Variadic-Macros.html
@@ -33,15 +26,7 @@ int sinErrors = 0;
 int semErrors = 0;
 extern int lexErrors;
 // tabla de simbolos
-Tipo tipo;
-Lista l;
 int contCadenas=0;
-
-llvm::LLVMContext Context;
-std::unique_ptr<llvm::Module> Module;
-llvm::IRBuilder<> *Builder;
-void initializeLLVM();
-void printValue(llvm::Value* val);
 
 std::map<std::string, llvm::Value*> tablaSim; // Tabla de Simbolos
 
@@ -49,17 +34,13 @@ std::map<std::string, llvm::Value*> tablaSim; // Tabla de Simbolos
 
 // INICIO BISON
 %code requires {
-    #include <llvm/IR/LLVMContext.h>
-    #include <llvm/IR/Module.h>
-    #include <llvm/IR/IRBuilder.h>
-    #include <llvm/IR/Verifier.h>
-    #include <llvm/Support/raw_ostream.h>
+	#include "generacionCodigo.h"
 }
 
 
 %union{
 	char* string;
-	llvm::Value* value;
+	ListaC codigo;
 	uint64_t intValue;
 }
 
@@ -78,54 +59,59 @@ std::map<std::string, llvm::Value*> tablaSim; // Tabla de Simbolos
 %nonassoc NOT_ELSE
 %nonassoc ELSE
 
-%type <value> expression statement statement_list print_list print_item read_list identifier identifier_list declarations program
+%type <codigo> expression statement statement_list print_list print_item read_list identifier identifier_list declarations program
 
 %%
 
-program: ID LPAREN RPAREN LCORCHETE declarations statement_list RCORCHETE;
+program: ID LPAREN RPAREN LCORCHETE declarations statement_list RCORCHETE {if(!error){ $$ = creaCodigo(2,$5,$6); imprimeCodigo($$);}};
 
-declarations: declarations VAR identifier_list SEMICOLON
+declarations: declarations VAR identifier_list SEMICOLON { if(!error){$$ = creaCodigo(2,$$,$3);}}
 	    | declarations CONST error SEMICOLON
 	    | declarations VAR error SEMICOLON
-	    | declarations CONST identifier_list SEMICOLON
-	    | /* empty */ ;
+	    | declarations CONST identifier_list SEMICOLON { if(!error){$$ = creaCodigo(2,$$,$3); }}
+	    | /* empty */ {if(!error){$$ = creaLC();} };
+
 
 identifier_list: identifier {if(!error){$$ = $1;}}
-	      | identifier_list COMMA identifier;
+	      | identifier_list COMMA identifier {if(!error){$$ = creaCodigo(2,$1,$3);}}  ;
 
 
-identifier: ID {	if(!error){$$ = Builder->CreateAlloca(llvm::Type::getInt32Ty(Context));
-	  		   tablaSim.insert({ $1,$$ });
+identifier: ID {	if(!error){
+	  		   $$ = creaLineaCodigo("alloca",new llvm::AllocaInst(llvm::Type::getInt32Ty(Context),0,"allocatmp",Builder->GetInsertBlock()));
+	  		   tablaSim.insert({ $1,val($$) });
 	                }
 	       }
 	  | ID ASSIGNOP expression {
-					if(!error){$$ = Builder->CreateAlloca(llvm::Type::getInt32Ty(Context));
-					   tablaSim.insert({ $1,$$ });
-					   Builder->CreateStore($3,$$,"");
+					if(!error){
+	  		   			ListaC inst1 = creaLineaCodigo("alloca",new llvm::AllocaInst(llvm::Type::getInt32Ty(Context),0,"allocatmp",Builder->GetInsertBlock()));
+						tablaSim.insert({ $1,val($$) });
+						ListaC inst2 = creaLineaCodigo("store",new llvm::StoreInst(val($3), val(inst1), Builder->GetInsertBlock()));
+						creaCodigo(2,inst1,inst2);
 					}
 
 				   };
 
 
-statement_list: statement_list statement
-	      | /* empty */ ;
+statement_list: statement_list statement { if(!error){creaCodigo(2,$1,$2);} }
+	      | /* empty */ {if(!error){$$ = creaLC();} };
 
 
 statement: ID ASSIGNOP expression SEMICOLON {
 			if(!error){
 				auto idx = tablaSim.find($1);
 				if(idx == tablaSim.end()){PRINT_ERROR("Error semántico en la linea %d variable %s no declarada\n",yylineno,$1); error = true ;semErrors++;}
-				llvm::Value* val = idx->second;
-				Builder->CreateStore($3,val,"");
+				llvm::Value* value = idx->second;
+				ListaC linea1 = creaLineaCodigo("store",new llvm::StoreInst(val($3), value,Builder->GetInsertBlock()));
+				$$ = creaCodigo(2,$3,linea1);
 			}
 
 	}
-         | LCORCHETE statement_list RCORCHETE
-	 | IF LPAREN expression RPAREN statement %prec NOT_ELSE
-	 | IF LPAREN expression RPAREN statement ELSE statement
-	 | WHILE LPAREN expression RPAREN statement
-	 | DO statement WHILE LPAREN expression RPAREN
-	 | PRINT LPAREN print_list RPAREN SEMICOLON
+         | LCORCHETE statement_list RCORCHETE { if(!error){$$ = $2;}}
+	 | IF LPAREN expression RPAREN statement %prec NOT_ELSE { if(!error){generateIf(val($3),val($5));}}
+	 | IF LPAREN expression RPAREN statement ELSE statement { if(!error){generateIfElse(val($3),val($5),val($7));}}
+	 | WHILE LPAREN expression RPAREN statement { if(!error){generateWhile(val($3),val($5));}}
+	 | DO statement WHILE LPAREN expression RPAREN { if(!error){generateDoWhile(val($2),val($5));}}
+	 | PRINT LPAREN print_list RPAREN SEMICOLON { if(!error){$$ = $3;}}
 	 /* ERRORES */
 	 | ID ASSIGNOP error {CLEAN_ERROR;PRINT_ERROR("se esperaba ;\n");}
 	 | PRINT error SEMICOLON {CLEAN_ERROR;PRINT_ERROR("sentencia print mal formada\n");} // se olvida de los ()
@@ -154,30 +140,30 @@ read_list: ID
 	 | read_list COMMA ID;
 
 
-expression: expression PLUSOP expression { if(!error){$$ = Builder->CreateAdd($1,$3,"addtmp");}}
-	  | expression MINUSOP expression { if(!error){$$ = Builder->CreateSub($1,$3,"subtmp");}}
-	  | expression MULTOP expression { if(!error){$$ = Builder->CreateMul($1,$3,"multmp");}}
-	  | expression DIVOP expression { if(!error){$$ = Builder->CreateUDiv($1,$3,"divtmp");}}
-	  | expression LTOP expression { if(!error){$$ = Builder->CreateICmpULT($1,$3,"lttmp");}}
-	  | expression GTOP expression { if(!error){$$ = Builder->CreateICmpUGT($1,$3,"gttmp");}}
-	  | expression GTEOP expression { if(!error){$$ = Builder->CreateICmpUGE($1,$3,"gtetmp");}}
-	  | expression LTEOP expression { if(!error){$$ = Builder->CreateICmpULE($1,$3,"uletmp");}}
-	  | expression EQOP expression { if(!error){$$ = Builder->CreateICmpEQ($1,$3,"eqtmp");}}
-	  | expression NOTEQOP expression { if(!error){$$ = Builder->CreateICmpNE($1,$3,"netmp");}}
-	  | expression AND expression { if(!error){$$ = Builder->CreateAnd($1,$3,"andtmp");}}
-	  | expression OR expression  { if(!error){$$ = Builder->CreateOr($1,$3,"ortmp");}}
-	  | UNOT expression {$$ = Builder->CreateNeg($2,"nottmp"); }
-	  | MINUSOP expression %prec UMINUS {$$ = Builder->CreateNeg($2,"negtmp"); }
+expression: expression PLUSOP expression { if(!error){$$ = creaLineaCodigo("add",llvm::BinaryOperator::Create(llvm::Instruction::Add, val($1), val($3)));}}
+	  | expression MINUSOP expression { if(!error){$$ = creaLineaCodigo("minus",llvm::BinaryOperator::Create(llvm::Instruction::Sub, val($1), val($3)));}}
+	  | expression MULTOP expression { if(!error){$$ = creaLineaCodigo("mul",llvm::BinaryOperator::Create(llvm::Instruction::Mul, val($1), val($3)));}}
+	  | expression DIVOP expression { if(!error){$$ = creaLineaCodigo("div",llvm::BinaryOperator::Create(llvm::Instruction::UDiv, val($1), val($3)));}}
+	  | expression LTOP expression { if(!error){$$ = creaLineaCodigo("lt",llvm::ICmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_ULT, val($1), val($3)));}}
+	  | expression GTOP expression { if(!error){$$ = creaLineaCodigo("gt",llvm::ICmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_UGT, val($1), val($3)));}}
+	  | expression GTEOP expression { if(!error){$$ = creaLineaCodigo("gte",llvm::ICmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_UGE, val($1), val($3)));}}
+	  | expression LTEOP expression { if(!error){$$ = creaLineaCodigo("lte",llvm::ICmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_ULE, val($1), val($3)));}}
+	  | expression EQOP expression { if(!error){$$ = creaLineaCodigo("eq",llvm::ICmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_EQ, val($1), val($3)));}}
+	  | expression NOTEQOP expression { if(!error){$$ = creaLineaCodigo("ne",llvm::ICmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_NE, val($1), val($3)));}}
+	  | expression AND expression { if(!error){$$ = creaLineaCodigo("and",llvm::BinaryOperator::Create(llvm::Instruction::And, val($1), val($3)));}}
+	  | expression OR expression  { if(!error){$$ = creaLineaCodigo("or",llvm::BinaryOperator::Create(llvm::Instruction::Or, val($1), val($3)));}}
+	  | UNOT expression {$$ = creaLineaCodigo("neg",llvm::BinaryOperator::CreateNeg(val($2)));}
+	  | MINUSOP expression %prec UMINUS {creaLineaCodigo("uminus",llvm::BinaryOperator::CreateNot(val($2)));}
 	  | LPAREN expression RPAREN { $$ = $2;}
 	  | ID {
 		if(!error){
 			auto idx = tablaSim.find($1);
-			if(idx == tablaSim.end()){PRINT_ERROR("Error semántico en la linea %d variable %s no declarada\n",yylineno,$1); error = true ;semErrors++;}
+			if(idx == tablaSim.end()){PRINT_ERROR("error semántico en la linea %d variable %s no declarada\n",yylineno,$1); error = true ;semErrors++;}
 			llvm::Value* val = idx->second;
-			$$ = Builder->CreateLoad(val->getType(),val,"");
+			$$ = creaLineaCodigo("load",new llvm::LoadInst(llvm::Type::getInt32Ty(Context), val, llvm::Twine($1),Builder->GetInsertBlock()));
 		}
 	  }
-	  | NUM  {  if(!error){ $$ = llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), $1);};}
+	  | NUM  {  if(!error){ $$ = creaLineaCodigo("const",llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), $1));};}
 
 
 %%
@@ -191,21 +177,4 @@ void yyerror(){
 	PRINT_ERROR("Error sintáctico en la linea %d ",yylineno);
 	error = true;
 	sinErrors++;
-}
-
-void initializeLLVM() {
-	Module = std::make_unique<llvm::Module>("my_module", Context);
-	Builder = new llvm::IRBuilder<>(Context);
-	llvm::FunctionType *FuncType = llvm::FunctionType::get(llvm::Type::getInt32Ty(Context), false);
-	llvm::Function *MainFunc = llvm::Function::Create(FuncType, llvm::Function::ExternalLinkage, "main", *Module);
-	llvm::BasicBlock *EntryBB = llvm::BasicBlock::Create(Context, "entry", MainFunc);
-	Builder->SetInsertPoint(EntryBB);
-}
-
-void printValue(llvm::Value* val){
-	if(llvm::ConstantInt* CI = llvm::dyn_cast<llvm::ConstantInt>(val)){
-		if(CI->getBitWidth() <= 32){
-			std::cout << "value: " << CI->getSExtValue() << std::endl;
-		}
-	}
 }

@@ -2,8 +2,8 @@ CC=g++
 #SANITY_FLAGS=-Wall -Wextra -fstack-protector-all -pedantic -Wno-unused -Wfloat-equal -Wshadow -Wpointer-arith -Wstrict-overflow=5 -Wformat=2
 LFLAGS= -lfl -lLLVM
 
-comp: Makefile main.o lexico.o sintactico.tab.o listaSimbolos.o listaCodigo.o generacionCodigo.o
-	$(CC) $(SANITY_FLAGS) main.o lexico.o sintactico.tab.o listaSimbolos.o listaCodigo.o generacionCodigo.o $(LFLAGS) -o comp
+comp: Makefile main.o lexico.o sintactico.tab.o listaSimbolos.o generacionCodigo.o llvmHelper.o
+	$(CC) $(SANITY_FLAGS) main.o lexico.o sintactico.tab.o listaSimbolos.o generacionCodigo.o llvmHelper.o $(LFLAGS) -o comp
 
 main.o: main.c lexico.c sintactico.tab.h
 	$(CC) $(SANITY_FLAGS) $(LFLAGS) -c main.c
@@ -26,8 +26,8 @@ listaSimbolos.o: listaSimbolos.c listaSimbolos.h
 generacionCodigo.o: generacionCodigo.c generacionCodigo.h
 	$(CC) $(SANITY_FLAGS) -c generacionCodigo.c
 
-listaCodigo.o: listaCodigo.c listaCodigo.h
-	$(CC)  $(SANITY_FLAGS) -c listaCodigo.c
+llvmHelper.o: llvmHelper.c llvmHelper.h
+	$(CC)  $(SANITY_FLAGS) -c -lLLVM llvmHelper.c
 
 
 debug: SANITY_FLAGS += -g

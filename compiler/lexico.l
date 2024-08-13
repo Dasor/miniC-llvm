@@ -1,6 +1,5 @@
 %{
 #include <stdbool.h>
-#include "listaCodigo.h"
 #include "sintactico.tab.h"
 #define RED 	"\033[0;31m"
 #define RESET   "\033[0m"
