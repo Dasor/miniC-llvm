@@ -39,6 +39,6 @@ int main(int argc, char *argv[]) {
 	fclose(fich);
 
 	errors_summary();
-	Module->print(llvm::outs(), nullptr);
+	//Module->print(llvm::outs(), nullptr);
 }
 

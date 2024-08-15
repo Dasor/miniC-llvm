@@ -3,9 +3,12 @@
 
 #include "llvmHelper.h"
 
+enum Type { VALUE, BLOCK, RET};
+
 typedef struct {
-	std::string op;
+	Type type;
 	llvm::Value* res;
+	llvm::BasicBlock* block;
 } Operacion;
 
 typedef struct ListaCRep {
@@ -14,15 +17,15 @@ typedef struct ListaCRep {
 } *ListaC;
 
 llvm::Value *val(ListaC lista);
-ListaC creaLineaCodigo(std::string op, llvm::Value *res);
+ListaC creaLineaCodigo(llvm::Value *res, Type type = VALUE, llvm::BasicBlock* block = nullptr);
 ListaC creaCodigo(int n,...);
 ListaC creaLC();
 void imprimeCodigo(ListaC lista);
-void generateIf(llvm::Value* expr, llvm::Value* stmt);
-void generateIfElse(llvm::Value* expr, llvm::Value* stmt1, llvm::Value* stmt2);
-void generateWhile(llvm::Value* expr, llvm::Value* stmt);
-void generateDoWhile(llvm::Value* stmt, llvm::Value* expr);
-
+ListaC generateIf(ListaC expr, ListaC stmt);
+ListaC generateIfElse(ListaC expr, ListaC stmt1, ListaC stmt2);
+ListaC generateWhile(ListaC expr, ListaC stmt);
+ListaC generateDoWhile(ListaC stmt, ListaC expr);
+ListaC generateReturn(ListaC expr);
 
 #endif
 

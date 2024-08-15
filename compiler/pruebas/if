@@ -1,9 +1,18 @@
 main(){
 	var a;
+	var b = 32;
+	var c;
 	a = 5+5;
+	c = 88;
 
-	if(a < 3){
-		a = a+1;
+	a = 25;
+	b = 78;
+
+	if(b > a){
+		return a;
+	}else if(c > b){
+		return c;
 	}
 
+	return b;
 }

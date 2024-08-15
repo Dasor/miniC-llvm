@@ -14,6 +14,9 @@ extern llvm::LLVMContext Context;
 extern std::unique_ptr<llvm::Module> Module;
 extern llvm::IRBuilder<> *Builder;
 extern llvm::Function *MainFunc;
+extern llvm::Value *retval;
+extern llvm::BasicBlock *end;
+
 void initializeLLVM();
 void printValue(llvm::Value* val);
 

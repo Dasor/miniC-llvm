@@ -5,7 +5,9 @@ llvm::LLVMContext Context;
 std::unique_ptr<llvm::Module> Module;
 llvm::IRBuilder<> *Builder;
 llvm::Function *MainFunc;
-llvm::BasicBlock *auxBB;
+llvm::Value *retval;
+llvm::BasicBlock *end;
+
 
 void initializeLLVM() {
 	Module = std::make_unique<llvm::Module>("my_module", Context);
@@ -14,6 +16,9 @@ void initializeLLVM() {
 	MainFunc = llvm::Function::Create(FuncType, llvm::Function::ExternalLinkage, "main", *Module);
 	llvm::BasicBlock *EntryBB = llvm::BasicBlock::Create(Context, "entry", MainFunc);
 	Builder->SetInsertPoint(EntryBB);
+	// for returning
+	retval = Builder->CreateAlloca(llvm::Type::getInt32Ty(Context),0,"retval");
+	end = llvm::BasicBlock::Create(Context,"end",MainFunc);
 }
 
 void printValue(llvm::Value* val){

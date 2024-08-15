@@ -39,6 +39,7 @@ if					    return IF;
 else					    return ELSE;
 while					    return WHILE;
 do					    return DO;
+return				    	    return RETURN;
 ({letra}|_)({letra}|_|{digito})*            id_len(); {yylval.string=strdup(yytext); return ID;}
 {entero}                                    overflow(); {yylval.intValue=atoi(yytext); return NUM;}
 "{"                                         return LCORCHETE;
