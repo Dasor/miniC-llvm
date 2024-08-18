@@ -7,6 +7,9 @@ llvm::IRBuilder<> *Builder;
 llvm::Function *MainFunc;
 llvm::Value *retval;
 llvm::BasicBlock *end;
+llvm::FunctionType *printfType;
+llvm::FunctionCallee printfFunc;
+llvm::GlobalVariable *globalIntStr;
 
 
 void initializeLLVM() {
@@ -19,6 +22,22 @@ void initializeLLVM() {
 	// for returning
 	retval = Builder->CreateAlloca(llvm::Type::getInt32Ty(Context),0,"retval");
 	end = llvm::BasicBlock::Create(Context,"end",MainFunc);
+	// printf declaration
+	 printfType = llvm::FunctionType::get(
+	    llvm::Type::getInt32Ty(Context), // Return type
+	    llvm::PointerType::get(Context,0),
+	    true); // Is variadic
+
+	printfFunc = Module->getOrInsertFunction("printf", printfType);
+	llvm::Constant *intFormatStr = llvm::ConstantDataArray::getString(Context, "%d", true);
+	globalIntStr = new llvm::GlobalVariable(
+						*Module,
+						intFormatStr->getType(),
+						true, // Constant
+						llvm::GlobalValue::PrivateLinkage,
+						intFormatStr,
+						".str");
+
 }
 
 void printValue(llvm::Value* val){

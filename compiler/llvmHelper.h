@@ -16,6 +16,10 @@ extern llvm::IRBuilder<> *Builder;
 extern llvm::Function *MainFunc;
 extern llvm::Value *retval;
 extern llvm::BasicBlock *end;
+extern llvm::FunctionCallee printfFunc;
+extern llvm::GlobalVariable *globalIntStr;
+
+
 
 void initializeLLVM();
 void printValue(llvm::Value* val);

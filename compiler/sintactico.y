@@ -133,12 +133,12 @@ statement: ID ASSIGNOP expression SEMICOLON {
 	/* FIN ERRORES */
 	 | READ LPAREN read_list RPAREN SEMICOLON;
 
-print_list: print_item
-	  | print_list COMMA print_item
+print_list: print_item { if(!error){$$ = $1; }}
+	  | print_list COMMA print_item { if(!error){$$ = creaCodigo(2,$1,$3);} };
 
 
-print_item: expression
-	  | STRING;
+print_item: expression { if(!error){$$ = generatePrintExpr($1);}}
+	  | STRING {if(!error){$$ = generatePrintString($1);}};
 
 read_list: ID
 	 | read_list COMMA ID;

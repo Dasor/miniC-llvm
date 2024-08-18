@@ -26,6 +26,8 @@ ListaC generateIfElse(ListaC expr, ListaC stmt1, ListaC stmt2);
 ListaC generateWhile(ListaC expr, ListaC stmt);
 ListaC generateDoWhile(ListaC stmt, ListaC expr);
 ListaC generateReturn(ListaC expr);
+ListaC generatePrintString(std::string str);
+ListaC generatePrintExpr(ListaC expr);
 
 #endif
 

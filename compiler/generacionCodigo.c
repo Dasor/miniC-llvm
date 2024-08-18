@@ -208,3 +208,72 @@ ListaC generateReturn(ListaC expr){
 
 }
 
+std::string interpretEscapes(const std::string &str) {
+    std::string result;
+    result.reserve(str.size());
+    for (size_t i = 0; i < str.size(); ++i) {
+        if (str[i] == '\\' && i + 1 < str.size()) {
+            switch (str[i + 1]) {
+                case 'n':
+                    result.push_back('\n');
+                    ++i;
+                    break;
+                case 't':
+                    result.push_back('\t');
+                    ++i;
+                    break;
+                // Handle other escape sequences as needed
+                default:
+                    result.push_back(str[i]);
+                    break;
+            }
+        } else {
+            result.push_back(str[i]);
+        }
+    }
+    return result;
+}
+
+ListaC generatePrintString(std::string str){
+
+
+	str.erase(str.begin());
+	str.erase(str.end()-1);
+	str = interpretEscapes(str);
+	llvm::Constant *llvmStr = llvm::ConstantDataArray::getString(Context, str, true);
+	llvm::GlobalVariable *globalStr = new llvm::GlobalVariable(
+									*Module,
+									llvmStr->getType(),
+									true, // Constant
+									llvm::GlobalValue::PrivateLinkage,
+									llvmStr,
+									".str");
+	llvm::Constant *zero = llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), 0);
+	std::vector<llvm::Constant*> indices = {zero, zero};
+	llvm::Constant *strPtr = llvm::ConstantExpr::getGetElementPtr(
+									globalStr->getValueType(),
+									globalStr,
+									indices);
+	std::vector<llvm::Value*> args;
+	args.push_back(strPtr);
+	ListaC call = creaLineaCodigo(llvm::CallInst::Create(printfFunc.getFunctionType(),printfFunc.getCallee(),args,"printstr"));
+	return creaCodigo(1,call);
+}
+
+ListaC generatePrintExpr(ListaC expr){
+
+	llvm::Constant *zero = llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), 0);
+	std::vector<llvm::Constant*> indices = {zero, zero};
+	llvm::Constant *strPtr = llvm::ConstantExpr::getGetElementPtr(
+									globalIntStr->getValueType(),
+									globalIntStr,
+									indices);
+
+
+	std::vector<llvm::Value*> args;
+	args.push_back(strPtr);
+	args.push_back(val(expr));
+	ListaC call = creaLineaCodigo(llvm::CallInst::Create(printfFunc.getFunctionType(),printfFunc.getCallee(),args,"printstr"));
+	return creaCodigo(2,expr,call);
+}
+
