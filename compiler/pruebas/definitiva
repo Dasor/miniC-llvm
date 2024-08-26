@@ -1,0 +1,81 @@
+main(){
+
+
+	const n = 10;
+	var i = 0;
+	var a1,a2,a3;
+	var b1,b2,b3;
+	var c1,c2,c3;
+	var u,v,w,x,y,z;
+
+	print("Introduce un vector:");
+	read(a1,a2,a3);
+	print("\nIntroduce otro vector:");
+	read(b1,b2,b3);
+
+	c1 = a1 + b1;
+	c2 = a2 + b2;
+	c3 = a3 + b3;
+
+	print("resultado de la suma de vectores: [", c1, ", ", c2, ", ", c3,"]\n");
+
+	print("Vamos a hacer tus vectores un poco más divertidos :D\n");
+
+	do{
+		a1 = a1+1;
+		a2 = a2+1;
+		a3 = a3+1;
+		i = i + 1;
+		print("Incrementado el vector 1: [", a1, ", ", a2, ", ", a3,"]\n");
+	}while(i < n)
+
+	i = 20;
+
+	while(i > n){
+		b1 = b1-1;
+		b2 = b2-1;
+		b3 = b3-1;
+		i = i-1;
+		print("decrementando el vector 2: [", b1, ", ", b2, ", ", b3,"]\n");
+	}
+
+	print("Vamos a multiplicarlos\n");
+
+	c1 = a1 * b1;
+	c2 = a2 * b2;
+	c3 = a3 * b3;
+
+	print("resultado de la multiplicación de vectores: [", c1, ", ", c2, ", ", c3,"]\n");
+
+	if(c1 >= 0 && c2 >= 0 && c3 >= 0){
+		print("Vaya han salido todos los números positivos\n");
+	}else{
+		print("han salido números negativos\n");
+	}
+
+
+	if( c1 == 0 || c2 == 0 || c3 == 0 ){
+		print("Ha salido un (o más) cero(s)\n");
+	}
+
+	print("\nBueno ya he me cansado de vectores vamos a hacer un poco de aritmética\n");
+
+	u = 5;
+	w = 33;
+	v = 100;
+	x = -2;
+	y = 1;
+
+	z = u+v-x*y/v+14;
+
+	print(u, " + " , v, " - ", x, " * ", y, " / ", v, " + ", 14, " = ", z , "\n" );
+	print("!", z, " = ", !z, "\n");
+	print("!!", z, " = ", !!z, "\n");
+
+	z = -(((u+v) - (x-y))*5)/2;
+
+	print("-(((",u,"+",v,")"," - (",x,"-",y,"))*5)/2 = ", z, "\n" );
+
+	print(" \"Escapando de la matrix\" \n");
+	return 0;
+}

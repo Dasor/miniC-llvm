@@ -1,0 +1,13 @@
+main(){
+
+	var a;
+	var b = 32;
+	print("Hola! Introduce un número: ");
+	read(a);
+	print("\nHas introducido: ", a ,"\n");
+	print("Hola! Introduce dos números: ");
+	read(b,a);
+	print("\nHas introducido: ", b , " ", a, "\n");
+
+	return 0;
+}

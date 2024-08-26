@@ -1,0 +1,11 @@
+main(){
+
+
+	var a = 119;
+	var b = 43;
+	var c = !!b;
+	print(!b,"\n");
+	print(b,"\n");
+	return 0;
+
+}

@@ -28,6 +28,8 @@ ListaC generateDoWhile(ListaC stmt, ListaC expr);
 ListaC generateReturn(ListaC expr);
 ListaC generatePrintString(std::string str);
 ListaC generatePrintExpr(ListaC expr);
+ListaC generateRead(llvm::Value* value);
+ListaC generateNot(ListaC expr);
 
 #endif
 

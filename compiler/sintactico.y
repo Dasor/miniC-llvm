@@ -18,6 +18,7 @@
 			    else if(esConstante(nombre,l)) {PRINT_ERROR("Error semántico en la linea %d Asignación a la constante %s\n",yylineno,nombre); error=true;semErrors++;}
 
 #define ONE llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), 1)
+#define ZERO llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), 0)
 
 extern "C" int yylex();
 void yyerror(std::string str);
@@ -88,7 +89,7 @@ identifier: ID {	if(!error){
 	  		   			ListaC inst1 = creaLineaCodigo(new llvm::AllocaInst(llvm::Type::getInt32Ty(Context),0,ONE,llvm::Align(4),"allocatmp"));
 						ListaC inst2 = creaLineaCodigo(new llvm::StoreInst(val($3), val(inst1), false, llvm::Align(4)));
 						tablaSim.insert({ $1,val(inst1) });
-						$$ = creaCodigo(2,inst1,inst2);
+						$$ = creaCodigo(3,$3,inst1,inst2);
 					}
 
 				   };
@@ -131,7 +132,7 @@ statement: ID ASSIGNOP expression SEMICOLON {
 	 | RETURN error {CLEAN_ERROR;PRINT_ERROR("se esperaba ; tras return\n");}
 	 | error SEMICOLON {CLEAN_ERROR;PRINT_ERROR("se esperaba ;\n");}
 	/* FIN ERRORES */
-	 | READ LPAREN read_list RPAREN SEMICOLON;
+	 | READ LPAREN read_list RPAREN SEMICOLON { if(!error){$$ = $3; }};
 
 print_list: print_item { if(!error){$$ = $1; }}
 	  | print_list COMMA print_item { if(!error){$$ = creaCodigo(2,$1,$3);} };
@@ -140,24 +141,35 @@ print_list: print_item { if(!error){$$ = $1; }}
 print_item: expression { if(!error){$$ = generatePrintExpr($1);}}
 	  | STRING {if(!error){$$ = generatePrintString($1);}};
 
-read_list: ID
-	 | read_list COMMA ID;
+read_list: ID { if(!error){
+			auto idx = tablaSim.find($1);
+			if(idx == tablaSim.end()){PRINT_ERROR("Error semántico en la linea %d variable %s no declarada\n",yylineno,$1); error = true ;semErrors++;}
+			llvm::Value* value = idx->second;
+		 	$$ = generateRead(value);}
+	      }
+	 | read_list COMMA ID { if(!error){
+					auto idx = tablaSim.find($3);
+					if(idx == tablaSim.end()){PRINT_ERROR("Error semántico en la linea %d variable %s no declarada\n",yylineno,$1); error = true ;semErrors++;}
+					llvm::Value* value = idx->second;
+	 				$$ = creaCodigo(2,$1,generateRead(value));
+				}
+			      };
 
 
 expression: expression PLUSOP expression { if(!error){$$ = creaCodigo(3,$1,$3,creaLineaCodigo(llvm::BinaryOperator::Create(llvm::Instruction::Add, val($1), val($3))));}}
 	  | expression MINUSOP expression { if(!error){$$ = creaCodigo(3,$1,$3,creaLineaCodigo(llvm::BinaryOperator::Create(llvm::Instruction::Sub, val($1), val($3))));}}
 	  | expression MULTOP expression { if(!error){$$ = creaCodigo(3,$1,$3,creaLineaCodigo(llvm::BinaryOperator::Create(llvm::Instruction::Mul, val($1), val($3))));}}
-	  | expression DIVOP expression { if(!error){$$ = creaCodigo(3,$1,$3,creaLineaCodigo(llvm::BinaryOperator::Create(llvm::Instruction::UDiv, val($1), val($3))));}}
-	  | expression LTOP expression { if(!error){$$ = creaCodigo(3,$1,$3,creaLineaCodigo(llvm::ICmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_ULT, val($1), val($3))));}}
-	  | expression GTOP expression { if(!error){$$ = creaCodigo(3,$1,$3,creaLineaCodigo(llvm::ICmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_UGT, val($1), val($3))));}}
-	  | expression GTEOP expression { if(!error){$$ = creaCodigo(3,$1,$3,creaLineaCodigo(llvm::ICmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_UGE, val($1), val($3))));}}
-	  | expression LTEOP expression { if(!error){$$ = creaCodigo(3,$1,$3,creaLineaCodigo(llvm::ICmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_ULE, val($1), val($3))));}}
+	  | expression DIVOP expression { if(!error){$$ = creaCodigo(3,$1,$3,creaLineaCodigo(llvm::BinaryOperator::Create(llvm::Instruction::SDiv, val($1), val($3))));}}
+	  | expression LTOP expression { if(!error){$$ = creaCodigo(3,$1,$3,creaLineaCodigo(llvm::ICmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_SLT, val($1), val($3))));}}
+	  | expression GTOP expression { if(!error){$$ = creaCodigo(3,$1,$3,creaLineaCodigo(llvm::ICmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_SGT, val($1), val($3))));}}
+	  | expression GTEOP expression { if(!error){$$ = creaCodigo(3,$1,$3,creaLineaCodigo(llvm::ICmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_SGE, val($1), val($3))));}}
+	  | expression LTEOP expression { if(!error){$$ = creaCodigo(3,$1,$3,creaLineaCodigo(llvm::ICmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_SLE, val($1), val($3))));}}
 	  | expression EQOP expression { if(!error){$$ = creaCodigo(3,$1,$3,creaLineaCodigo(llvm::ICmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_EQ, val($1), val($3))));}}
 	  | expression NOTEQOP expression { if(!error){$$ = creaCodigo(3,$1,$3,creaLineaCodigo(llvm::ICmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_NE, val($1), val($3))));}}
 	  | expression AND expression { if(!error){$$ = creaCodigo(3,$1,$3,creaLineaCodigo(llvm::BinaryOperator::Create(llvm::Instruction::And, val($1), val($3))));}}
 	  | expression OR expression  { if(!error){$$ = creaCodigo(3,$1,$3,creaLineaCodigo(llvm::BinaryOperator::Create(llvm::Instruction::Or, val($1), val($3))));}}
-	  | UNOT expression {if(!error) {$$ = creaCodigo(2,$2,creaLineaCodigo(llvm::BinaryOperator::CreateNeg(val($2))));}}
-	  | MINUSOP expression %prec UMINUS {if(!error) {creaCodigo(2,$2,creaLineaCodigo(llvm::BinaryOperator::CreateNot(val($2))));}}
+	  | UNOT expression {if(!error) {$$ = generateNot($2);}}
+	  | MINUSOP expression %prec UMINUS {if(!error) {$$ = creaCodigo(2,$2,creaLineaCodigo(llvm::BinaryOperator::CreateNeg(val($2))));}}
 	  | LPAREN expression RPAREN { $$ = $2;}
 	  | ID {
 		if(!error){

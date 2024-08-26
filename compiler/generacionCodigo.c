@@ -13,6 +13,7 @@
 #define RED 	"\033[0;31m"
 #define RESET   "\033[0m"
 #define PRINT_ERROR(fmt, ...) fprintf(stderr, RED fmt RESET, ##__VA_ARGS__) // ## sirve para que no ponga coma si no hay args https://gcc.gnu.org/onlinedocs/gcc/Variadic-Macros.html
+#define ONE llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), 1)
 #define FILEOUT "out/prog.ll"
 int cont=1;
 // TODO: check type of variadic args
@@ -151,9 +152,14 @@ ListaC generateIfElse(ListaC expr, ListaC stmt1, ListaC stmt2){
 	     etiq3
 	  */
 
+	ListaC tag1 =  creaLineaCodigo(nullptr,BLOCK,llvm::BasicBlock::Create(Context,"if",MainFunc));
+	ListaC tag2 = creaLineaCodigo(nullptr,BLOCK,llvm::BasicBlock::Create(Context,"notif",MainFunc));
 	ListaC tag3 = creaLineaCodigo(nullptr,BLOCK,llvm::BasicBlock::Create(Context,"endif",MainFunc));
+	ListaC jmp1 = creaLineaCodigo(llvm::BranchInst::Create(block(tag1),block(tag2),val(expr)));
+	ListaC jmp2 = creaLineaCodigo(llvm::BranchInst::Create(block(tag3)));
 	ListaC jmp3 = creaLineaCodigo(llvm::BranchInst::Create(block(tag3)));
-	return creaCodigo(4,generateIf(expr,stmt1),stmt2,jmp3,tag3);
+
+	return creaCodigo(9,expr,jmp1,tag1,stmt1,jmp2,tag2,stmt2,jmp3,tag3);
 
 
 }
@@ -176,7 +182,7 @@ ListaC generateWhile(ListaC expr, ListaC stmt){
 	ListaC tag2 = creaLineaCodigo(nullptr,BLOCK,llvm::BasicBlock::Create(Context,"enterloop",MainFunc));
 	ListaC tag3 = creaLineaCodigo(nullptr,BLOCK,llvm::BasicBlock::Create(Context,"exitloop",MainFunc));
 	ListaC jmp2 = creaLineaCodigo(llvm::BranchInst::Create(block(tag2),block(tag3),val(expr)));
-	ListaC jmp3 = creaLineaCodigo(llvm::BranchInst::Create(block(tag3)));
+	ListaC jmp3 = creaLineaCodigo(llvm::BranchInst::Create(block(tag1)));
 
 	return creaCodigo(8,jmp1,tag1,expr,jmp2,tag2,stmt,jmp3,tag3);
 }
@@ -275,5 +281,41 @@ ListaC generatePrintExpr(ListaC expr){
 	args.push_back(val(expr));
 	ListaC call = creaLineaCodigo(llvm::CallInst::Create(printfFunc.getFunctionType(),printfFunc.getCallee(),args,"printstr"));
 	return creaCodigo(2,expr,call);
+}
+
+
+ListaC generateRead(llvm::Value* value){
+
+	llvm::Constant *zero = llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), 0);
+	std::vector<llvm::Constant*> indices = {zero, zero};
+	llvm::Constant *strPtr = llvm::ConstantExpr::getGetElementPtr(
+									globalIntStr->getValueType(),
+									globalIntStr,
+									indices);
+
+	std::vector<llvm::Value*> args;
+	args.push_back(strPtr);
+	args.push_back(value);
+
+	return creaLineaCodigo(llvm::CallInst::Create(scanfFunc.getFunctionType(),scanfFunc.getCallee(),args,"scanint"));
+
+}
+
+
+ListaC generateNot(ListaC expr){
+
+	llvm::Value* value = val(expr);
+	llvm::Constant *zero = llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), 0);
+
+	if(value->getType()->isIntegerTy(32)){
+		ListaC unot = creaLineaCodigo(llvm::ICmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_EQ, value, zero));
+		return creaCodigo(2,expr,unot);
+	}else{ // i1
+		ListaC zext = creaLineaCodigo(llvm::CastInst::CreateZExtOrBitCast(value,llvm::Type::getInt32Ty(Context),"zext"));
+		ListaC unot = creaLineaCodigo(llvm::ICmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_EQ, val(zext), zero));
+		return creaCodigo(3,expr,zext,unot);
+
+	}
+
 }
 

@@ -7,8 +7,8 @@ llvm::IRBuilder<> *Builder;
 llvm::Function *MainFunc;
 llvm::Value *retval;
 llvm::BasicBlock *end;
-llvm::FunctionType *printfType;
 llvm::FunctionCallee printfFunc;
+llvm::FunctionCallee scanfFunc;
 llvm::GlobalVariable *globalIntStr;
 
 
@@ -23,7 +23,7 @@ void initializeLLVM() {
 	retval = Builder->CreateAlloca(llvm::Type::getInt32Ty(Context),0,"retval");
 	end = llvm::BasicBlock::Create(Context,"end",MainFunc);
 	// printf declaration
-	 printfType = llvm::FunctionType::get(
+	llvm::FunctionType *printfType = llvm::FunctionType::get(
 	    llvm::Type::getInt32Ty(Context), // Return type
 	    llvm::PointerType::get(Context,0),
 	    true); // Is variadic
@@ -37,6 +37,14 @@ void initializeLLVM() {
 						llvm::GlobalValue::PrivateLinkage,
 						intFormatStr,
 						".str");
+	//scanf declaration
+	llvm::FunctionType *scanfType = llvm::FunctionType::get(
+	    llvm::Type::getInt32Ty(Context), // Return type
+	    llvm::PointerType::get(Context,0),
+	    true); // Is variadic
+
+	scanfFunc = Module->getOrInsertFunction("__isoc99_scanf", scanfType);
+
 
 }
 

@@ -35,4 +35,4 @@ debug: BISON_DEBUG += -v
 debug: comp
 
 clean:
-	rm *.o comp lexico.c sintactico.tab.h sintactico.tab.c out/prog.ll
+	rm *.o comp lexico.c sintactico.tab.h sintactico.tab.c

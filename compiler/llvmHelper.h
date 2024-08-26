@@ -17,6 +17,7 @@ extern llvm::Function *MainFunc;
 extern llvm::Value *retval;
 extern llvm::BasicBlock *end;
 extern llvm::FunctionCallee printfFunc;
+extern llvm::FunctionCallee scanfFunc;
 extern llvm::GlobalVariable *globalIntStr;
 
 
