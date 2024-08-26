@@ -1,7 +1,7 @@
 #ifndef __GEN_CODIGO__
 #define __GEN_CODIGO__
 
-#include "llvmHelper.h"
+#include "llvmHelper.hpp"
 
 enum Type { VALUE, BLOCK, RET};
 
@@ -32,4 +32,3 @@ ListaC generateRead(llvm::Value* value);
 ListaC generateNot(ListaC expr);
 
 #endif
-

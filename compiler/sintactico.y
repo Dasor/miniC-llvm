@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <iostream>
 #include <map>
-#include "listaSimbolos.h"
-#include "generacionCodigo.h"
+#include "listaSimbolos.hpp"
+#include "generacionCodigo.hpp"
 #define RED 	"\033[0;31m"
 #define RESET   "\033[0m"
 #define PRINT_ERROR(fmt, ...) fprintf(stderr, RED fmt RESET, ##__VA_ARGS__) // ## sirve para que no ponga coma si no hay args https://gcc.gnu.org/onlinedocs/gcc/Variadic-Macros.html
@@ -37,7 +37,7 @@ std::map<std::string, llvm::Value*> tablaSim; // Tabla de Simbolos
 
 // INICIO BISON
 %code requires {
-	#include "generacionCodigo.h"
+	#include "generacionCodigo.hpp"
 }
 
 

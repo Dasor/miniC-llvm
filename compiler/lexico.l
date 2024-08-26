@@ -14,7 +14,7 @@ extern int semErrors;
 extern bool error;
 %}
 %option yylineno
-%option outfile="lexico.c"
+%option outfile="lexico.cpp"
 
 %x com
 

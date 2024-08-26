@@ -1,5 +1,5 @@
 #include <iostream>
-#include "llvmHelper.h"
+#include "llvmHelper.hpp"
 
 llvm::LLVMContext Context;
 std::unique_ptr<llvm::Module> Module;
@@ -55,4 +55,3 @@ void printValue(llvm::Value* val){
 		}
 	}
 }
-

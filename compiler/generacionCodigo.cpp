@@ -1,6 +1,6 @@
 // generación de código
-#include "generacionCodigo.h"
-#include "listaSimbolos.h"
+#include "generacionCodigo.hpp"
+#include "listaSimbolos.hpp"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -318,4 +318,3 @@ ListaC generateNot(ListaC expr){
 	}
 
 }
-
