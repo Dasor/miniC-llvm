@@ -12,11 +12,6 @@
 #define PRINT_ERROR(fmt, ...) fprintf(stderr, RED fmt RESET, ##__VA_ARGS__) // ## sirve para que no ponga coma si no hay args https://gcc.gnu.org/onlinedocs/gcc/Variadic-Macros.html
 #define CLEAN_ERROR yyerrok;yyclearin;
 // MACROS tabla de simbolos para acciones que se repiten
-#define AÑADIR_ID(nombre,tipo) if (!pertenece(nombre,l)) añadeEntrada(nombre,tipo,l,contCadenas); \
-	  		    else { PRINT_ERROR("Error semántico en la linea %d, Variable %s ya declarada \n",yylineno,nombre); error=true; semErrors++;}
-#define ASIG_VALIDA(nombre) if (!pertenece(nombre,l)) {PRINT_ERROR("Error semántico en la linea %d variable %s no declarada\n",yylineno,nombre); error=true; semErrors++;} \
-			    else if(esConstante(nombre,l)) {PRINT_ERROR("Error semántico en la linea %d Asignación a la constante %s\n",yylineno,nombre); error=true;semErrors++;}
-
 #define ONE llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), 1)
 #define ZERO llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), 0)
 
@@ -69,9 +64,7 @@ std::map<std::string, llvm::Value*> tablaSim; // Tabla de Simbolos
 program: ID LPAREN RPAREN LCORCHETE declarations statement_list RCORCHETE {if(!error){ imprimeCodigo(creaCodigo(2,$5,$6));}};
 
 declarations: declarations VAR identifier_list SEMICOLON { if(!error){$$ = creaCodigo(2,$$,$3);}}
-	    | declarations CONST error SEMICOLON
-	    | declarations VAR error SEMICOLON
-	    | declarations CONST identifier_list SEMICOLON { if(!error){$$ = creaCodigo(2,$$,$3); }}
+	    | declarations VAR error SEMICOLON {CLEAN_ERROR;PRINT_ERROR("se esperaban identificadores tras el token var\n");}
 	    | /* empty */ {if(!error){$$ = creaLC();} };
 
 
@@ -80,16 +73,24 @@ identifier_list: identifier {if(!error){$$ = $1;}}
 
 
 identifier: ID {	if(!error){
-	  		   $$ = creaLineaCodigo(new llvm::AllocaInst(llvm::Type::getInt32Ty(Context),0,ONE,llvm::Align(4),"allocatmp"));
-	  		   tablaSim.insert({ $1,val($$) });
+				if(tablaSim.find($1) == tablaSim.end() ){ // key is not in map
+	  		 		$$ = creaLineaCodigo(new llvm::AllocaInst(llvm::Type::getInt32Ty(Context),0,ONE,llvm::Align(4),"allocatmp"));
+	  		 		tablaSim.insert({ $1,val($$) });
+				}else{
+					PRINT_ERROR("Error semántico en la linea %d, Variable %s ya declarada \n",yylineno,$1); error=true; semErrors++;
+				}
 	                }
 	       }
 	  | ID ASSIGNOP expression {
 					if(!error){
-	  		   			ListaC inst1 = creaLineaCodigo(new llvm::AllocaInst(llvm::Type::getInt32Ty(Context),0,ONE,llvm::Align(4),"allocatmp"));
-						ListaC inst2 = creaLineaCodigo(new llvm::StoreInst(val($3), val(inst1), false, llvm::Align(4)));
-						tablaSim.insert({ $1,val(inst1) });
-						$$ = creaCodigo(3,$3,inst1,inst2);
+						if(tablaSim.find($1) == tablaSim.end() ){ // key is not in map
+							ListaC inst1 = creaLineaCodigo(new llvm::AllocaInst(llvm::Type::getInt32Ty(Context),0,ONE,llvm::Align(4),"allocatmp"));
+							ListaC inst2 = creaLineaCodigo(new llvm::StoreInst(val($3), val(inst1), false, llvm::Align(4)));
+							tablaSim.insert({ $1,val(inst1) });
+							$$ = creaCodigo(3,$3,inst1,inst2);
+						}else{
+							PRINT_ERROR("Error semántico en la linea %d, Variable %s ya declarada \n",yylineno,$1); error=true; semErrors++;
+						}
 					}
 
 				   };
@@ -186,10 +187,6 @@ expression: expression PLUSOP expression { if(!error){$$ = creaCodigo(3,$1,$3,cr
 
 
 void yyerror(std::string str){
-	PRINT_ERROR("Error sintáctico en la linea %d ",yylineno);
-}
-
-void yyerror(){
 	PRINT_ERROR("Error sintáctico en la linea %d ",yylineno);
 	error = true;
 	sinErrors++;

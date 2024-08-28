@@ -56,7 +56,7 @@ return				    	    return RETURN;
 ">"                                         return GTOP;
 "<"                                         return LTOP;
 ">="                                        return GTEOP;
-"=<"                                        return GTEOP;
+"<="                                        return GTEOP;
 "=="					    return EQOP;
 "!="					    return NOTEQOP;
 "&&"					    return AND;

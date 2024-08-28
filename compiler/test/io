@@ -1,0 +1,16 @@
+main(){
+
+	var a,b,c;
+	print("enter value for a: ");
+	read(a);
+	print("\n");
+	print("value is: ", a , "\n");
+	print("\" escaping \"");
+
+	print("enter value for b and c: ");
+	read(b,c);
+	print("values are: ", b , " ", c, "\n");
+
+	return 0;
+
+}

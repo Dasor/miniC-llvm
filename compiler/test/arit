@@ -1,0 +1,28 @@
+main(){
+
+
+	var a = 119;
+	var b = 43;
+	var c = -32;
+
+	print("a: ", a , "\n");
+	print("b: ", b , "\n");
+	print("c: ", c , "\n");
+	print("a+b: ", a+b , "\n");
+	print("a-c: ", a-c , "\n");
+	print("a*c: ", a*c , "\n");
+	print("10/5: ", 10/5 , "\n");
+	print("3 > 2: ", 3>2 , "\n");
+	print("2 < 2: ", 2<2 , "\n");
+	print("2 <= 2: ", 2<=2 , "\n");
+	print("3 >= 3: ", 3>=3 , "\n");
+	print("3 == 2: ", 3==2 , "\n");
+	print("3 != 3: ", 3!=3 , "\n");
+	print("0 && 1: ", 0&&1 , "\n");
+	print("0 || 1: ", 0||1 , "\n");
+	print("!a: ", !a , "\n");
+	print("-b: ", -b , "\n");
+	print("(((5*3)*-2 + a)*b)-c: ", (((5*3)*-2 + a)*b)-c , "\n");
+	return 0;
+
+}

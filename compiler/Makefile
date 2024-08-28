@@ -20,9 +20,6 @@ sintactico.tab.o: sintactico.tab.c sintactico.tab.h
 sintactico.tab.hpp sintactico.tab.cpp: sintactico.y
 	bison -d sintactico.y
 
-listaSimbolos.o: listaSimbolos.cpp listaSimbolos.hpp
-	$(CC) $(SANITY_FLAGS) -c listaSimbolos.cpp
-
 generacionCodigo.o: generacionCodigo.cpp generacionCodigo.hpp
 	$(CC) $(SANITY_FLAGS) -c generacionCodigo.cpp
 

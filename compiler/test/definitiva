@@ -1,7 +1,7 @@
 main(){
 
 
-	const n = 10;
+	var n = 10;
 	var i = 0;
 	var a1,a2,a3;
 	var b1,b2,b3;

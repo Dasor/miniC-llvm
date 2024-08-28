@@ -1,9 +1,0 @@
-main(){
-
-	var a;
-	var b;
-	var c;
-	a = 2+2;
-	b = a+c;
-	c = a<2;
-}
